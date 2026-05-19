@@ -15,6 +15,8 @@ experiments/*/runs/*
 published/*
 !published/.gitkeep
 viewer/database.csv
+viewer/experiments/*
+!viewer/experiments/.gitkeep
 viewer/published/*
 !viewer/published/.gitkeep
 queue/pending/*.lock

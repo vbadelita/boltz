@@ -272,6 +272,102 @@
         color: white;
       }
 
+      .notes-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(17, 24, 39, 0.38);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        z-index: 20;
+      }
+
+      .notes-overlay.open {
+        display: flex;
+      }
+
+      .notes-panel {
+        width: min(860px, 100%);
+        max-height: min(82vh, 900px);
+        overflow: auto;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+      }
+
+      .notes-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        background: rgba(255, 255, 255, 0.96);
+      }
+
+      .notes-head h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .notes-body {
+        padding: 16px;
+        color: var(--text);
+        line-height: 1.5;
+      }
+
+      .notes-body h1,
+      .notes-body h2,
+      .notes-body h3 {
+        margin: 18px 0 8px;
+      }
+
+      .notes-body h1:first-child,
+      .notes-body h2:first-child,
+      .notes-body h3:first-child {
+        margin-top: 0;
+      }
+
+      .notes-body p,
+      .notes-body ul,
+      .notes-body ol,
+      .notes-body pre {
+        margin: 10px 0;
+      }
+
+      .notes-body code {
+        background: #f2f5f6;
+        border-radius: 4px;
+        padding: 1px 4px;
+        font-size: 0.95em;
+      }
+
+      .notes-body pre {
+        background: #f5f7f8;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        overflow: auto;
+      }
+
+      .notes-body table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .notes-body th,
+      .notes-body td {
+        border: 1px solid var(--line);
+        padding: 6px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+
       .stage {
         position: relative;
         min-height: 280px;
@@ -469,6 +565,7 @@
             <p id="selectedSubtitle"></p>
           </div>
           <div class="actions">
+            <button id="experimentNotes" class="action">Experiment Notes</button>
             <button id="openFolder" class="action">Open Folder</button>
             <button id="spinToggle" class="action">Spin</button>
             <button id="resetView" class="action primary">Reset View</button>
@@ -520,6 +617,16 @@
       </main>
     </div>
 
+    <div id="notesOverlay" class="notes-overlay" aria-hidden="true">
+      <div class="notes-panel">
+        <div class="notes-head">
+          <h3 id="notesTitle">Experiment Notes</h3>
+          <button id="closeNotes" class="action">Close</button>
+        </div>
+        <div id="notesBody" class="notes-body"></div>
+      </div>
+    </div>
+
     <input
       id="folderInput"
       type="file"
@@ -555,6 +662,11 @@
         selectedSubtitle: document.getElementById("selectedSubtitle"),
         loading: document.getElementById("loading"),
         openFolder: document.getElementById("openFolder"),
+        experimentNotes: document.getElementById("experimentNotes"),
+        notesOverlay: document.getElementById("notesOverlay"),
+        notesTitle: document.getElementById("notesTitle"),
+        notesBody: document.getElementById("notesBody"),
+        closeNotes: document.getElementById("closeNotes"),
         folderInput: document.getElementById("folderInput"),
         spinToggle: document.getElementById("spinToggle"),
         resetView: document.getElementById("resetView"),
@@ -584,6 +696,13 @@
         confidenceLink: document.getElementById("confidenceLink"),
         metadataLink: document.getElementById("metadataLink"),
       };
+
+      function activeExperimentSlug() {
+        if (state.selectedExperiment && state.selectedExperiment !== "__all__") {
+          return state.selectedExperiment;
+        }
+        return state.selectedRow ? experimentKey(state.selectedRow) : "";
+      }
 
       function parseCsv(text) {
         const rows = [];
@@ -1047,6 +1166,140 @@
           .replaceAll('"', "&quot;");
       }
 
+      function inlineMarkdown(text) {
+        return escapeHtml(text)
+          .replace(/`([^`]+)`/g, "<code>$1</code>")
+          .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+      }
+
+      function renderMarkdown(markdown) {
+        const lines = markdown.replace(/\r/g, "").split("\n");
+        const html = [];
+        let inList = false;
+        let inCode = false;
+        let inTable = false;
+        let tableHeader = null;
+
+        function closeList() {
+          if (inList) {
+            html.push("</ul>");
+            inList = false;
+          }
+        }
+
+        function closeCode() {
+          if (inCode) {
+            html.push("</code></pre>");
+            inCode = false;
+          }
+        }
+
+        function closeTable() {
+          if (inTable) {
+            html.push("</tbody></table>");
+            inTable = false;
+            tableHeader = null;
+          }
+        }
+
+        function tableRow(line, cellTag) {
+          const cells = line
+            .split("|")
+            .slice(1, -1)
+            .map((cell) => `<${cellTag}>${inlineMarkdown(cell.trim())}</${cellTag}>`)
+            .join("");
+          return `<tr>${cells}</tr>`;
+        }
+
+        for (let index = 0; index < lines.length; index += 1) {
+          const line = lines[index];
+          if (line.startsWith("```")) {
+            closeList();
+            closeTable();
+            if (!inCode) {
+              html.push("<pre><code>");
+              inCode = true;
+            } else {
+              closeCode();
+            }
+            continue;
+          }
+          if (inCode) {
+            html.push(`${escapeHtml(line)}\n`);
+            continue;
+          }
+          if (!line.trim()) {
+            closeList();
+            closeTable();
+            continue;
+          }
+          if (/^\|.*\|$/.test(line) && index + 1 < lines.length && /^\|(?:\s*-+\s*\|)+$/.test(lines[index + 1])) {
+            closeList();
+            closeTable();
+            html.push("<table><thead>");
+            html.push(tableRow(line, "th"));
+            html.push("</thead><tbody>");
+            inTable = true;
+            tableHeader = true;
+            index += 1;
+            continue;
+          }
+          if (inTable && /^\|.*\|$/.test(line)) {
+            html.push(tableRow(line, "td"));
+            continue;
+          }
+          closeTable();
+          const heading = line.match(/^(#{1,3})\s+(.*)$/);
+          if (heading) {
+            closeList();
+            const level = heading[1].length;
+            html.push(`<h${level}>${inlineMarkdown(heading[2])}</h${level}>`);
+            continue;
+          }
+          const bullet = line.match(/^\-\s+(.*)$/);
+          if (bullet) {
+            if (!inList) {
+              html.push("<ul>");
+              inList = true;
+            }
+            html.push(`<li>${inlineMarkdown(bullet[1])}</li>`);
+            continue;
+          }
+          closeList();
+          html.push(`<p>${inlineMarkdown(line)}</p>`);
+        }
+        closeList();
+        closeCode();
+        closeTable();
+        return html.join("");
+      }
+
+      async function openExperimentNotes() {
+        const experimentSlug = activeExperimentSlug();
+        if (!experimentSlug) return;
+        const experimentLabel =
+          state.selectedRow?.experiment ||
+          state.rows.find((row) => experimentKey(row) === experimentSlug)?.experiment ||
+          experimentSlug;
+        els.notesTitle.textContent = `${experimentLabel} Notes`;
+        els.notesBody.innerHTML = "<p>Loading notes...</p>";
+        els.notesOverlay.classList.add("open");
+        els.notesOverlay.setAttribute("aria-hidden", "false");
+        try {
+          const markdown = await readTextFile(`experiments/${experimentSlug}/summary.md`);
+          els.notesBody.innerHTML = renderMarkdown(markdown);
+        } catch (error) {
+          els.notesBody.innerHTML =
+            "<p>Notes are not available for this experiment yet.</p>";
+        }
+      }
+
+      function closeExperimentNotes() {
+        els.notesOverlay.classList.remove("open");
+        els.notesOverlay.setAttribute("aria-hidden", "true");
+      }
+
       async function init() {
         state.viewer = $3Dmol.createViewer("viewer", { backgroundColor: "#fbfbf8" });
         els.openFolder.style.display = isFileProtocol ? "inline-flex" : "none";
@@ -1112,9 +1365,21 @@
         state.viewer.render();
       });
       els.openFolder.addEventListener("click", () => els.folderInput.click());
+      els.experimentNotes.addEventListener("click", openExperimentNotes);
+      els.closeNotes.addEventListener("click", closeExperimentNotes);
+      els.notesOverlay.addEventListener("click", (event) => {
+        if (event.target === els.notesOverlay) {
+          closeExperimentNotes();
+        }
+      });
       els.folderInput.addEventListener("change", async (event) => {
         loadFolderFiles(event.target.files);
         setRows(parseCsv(await readTextFile("database.csv")));
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeExperimentNotes();
+        }
       });
 
       init();

@@ -9,7 +9,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from utils.common import PUBLISHED_ROOT, VIEWER_DB_PATH
+from utils.common import PUBLISHED_ROOT, VIEWER_DB_PATH, VIEWER_ROOT
+from utils.experiment_notes import export_experiment_notes
 from utils.viewer_db import (
     discover_published_viewers,
     normalize_existing_row,
@@ -63,6 +64,7 @@ def main() -> int:
             merged[row_key(row)] = row
     rows = [merged[key] for key in sorted(merged)]
     write_rows(args.output.resolve(), rows)
+    export_experiment_notes(rows, viewer_root, VIEWER_ROOT.parent.parent)
     print(f"Wrote {len(rows)} rows to {args.output}")
     return 0
 

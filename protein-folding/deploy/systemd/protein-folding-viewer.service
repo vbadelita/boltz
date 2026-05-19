@@ -1,0 +1,15 @@
+[Unit]
+Description=protein-folding standalone viewer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/default/protein-folding-viewer
+WorkingDirectory=/srv/protein-folding-viewer
+ExecStart=/usr/bin/python3 -m http.server ${PORT} --bind ${BIND} --directory ${VIEWER_ROOT}
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

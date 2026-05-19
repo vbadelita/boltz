@@ -36,6 +36,7 @@ python3 scripts/run_queue.py --help
 python3 scripts/publish_run.py --help
 python3 scripts/merge_viewer_db.py --help
 python3 scripts/serve_viewer.py --help
+./scripts/rsync_viewer.sh --help
 ```
 
 ## Host model
@@ -43,6 +44,41 @@ python3 scripts/serve_viewer.py --help
 - Compute host: runs `boltz` or `lmi4boltz` and writes experiment run directories.
 - Viewer host: receives published bundles under `viewer/published/`, rebuilds
   `viewer/database.csv`, and serves the `viewer/` directory.
+
+## Viewer deploy
+
+The standalone deployable artifact is the `viewer/` folder. It contains:
+
+- `index.html`
+- `database.csv`
+- `experiments/<experiment_slug>/summary.md`
+- `published/...` structures and confidence files
+
+To refresh the standalone viewer locally before shipping it:
+
+```bash
+python3 scripts/merge_viewer_db.py
+```
+
+To sync only the viewer folder to a remote host:
+
+```bash
+./scripts/rsync_viewer.sh user@host:/srv/protein-folding-viewer
+```
+
+To install a simple systemd service on the viewer host after the folder is in place:
+
+```bash
+sudo ./scripts/install_viewer_systemd.sh /srv/protein-folding-viewer
+```
+
+That script installs:
+
+- `deploy/systemd/protein-folding-viewer.service` -> `/etc/systemd/system/`
+- `deploy/systemd/protein-folding-viewer.env` -> `/etc/default/`
+
+The service serves the viewer root directly, so opening `http://host:8766/` loads
+`index.html` instead of a directory listing.
 
 ## Runtime layout
 
