@@ -3,9 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+VIEWER_ROOT = REPO_ROOT / "viewer"
 QUEUE_ROOT = REPO_ROOT / "queue"
-PUBLISHED_ROOT = REPO_ROOT / "published"
-VIEWER_DB_PATH = REPO_ROOT / "viewer" / "database.csv"
+PUBLISHED_ROOT = VIEWER_ROOT / "published"
+VIEWER_DB_PATH = VIEWER_ROOT / "database.csv"
 HOSTS_CONFIG_PATH = REPO_ROOT / "configs" / "hosts.toml"
 RUNTIME_CONFIG_PATH = REPO_ROOT / "configs" / "runtime.toml"
 
@@ -29,3 +30,9 @@ def repo_relative(path: Path) -> str:
     """Return a portable repo-relative path."""
 
     return path.relative_to(REPO_ROOT).as_posix()
+
+
+def viewer_relative(path: Path) -> str:
+    """Return a path relative to the standalone viewer web root."""
+
+    return path.relative_to(VIEWER_ROOT).as_posix()

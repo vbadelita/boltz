@@ -33,8 +33,9 @@ def write_viewer_csv(path: Path, rows: list[dict[str, str]]) -> None:
 
 
 def test_merge_viewer_db_deduplicates_by_experiment_target_and_sample(tmp_path: Path) -> None:
-    published_root = tmp_path / "published"
-    output_path = tmp_path / "viewer" / "database.csv"
+    viewer_root = tmp_path / "viewer"
+    published_root = viewer_root / "published"
+    output_path = viewer_root / "database.csv"
     row_a = viewer_db.base_row(
         experiment="Example",
         experiment_slug="example",

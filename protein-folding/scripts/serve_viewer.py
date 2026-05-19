@@ -6,7 +6,7 @@ import http.server
 import socketserver
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+VIEWER_ROOT = Path(__file__).resolve().parents[1] / "viewer"
 
 
 def parse_args() -> argparse.Namespace:
@@ -16,15 +16,19 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-class RepoRootHandler(http.server.SimpleHTTPRequestHandler):
+class ViewerRootHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(REPO_ROOT), **kwargs)
+        super().__init__(*args, directory=str(VIEWER_ROOT), **kwargs)
+
+
+class ReusableTCPServer(socketserver.TCPServer):
+    allow_reuse_address = True
 
 
 def main() -> int:
     args = parse_args()
-    with socketserver.TCPServer((args.host, args.port), RepoRootHandler) as httpd:
-        print(f"Serving {REPO_ROOT} at http://{args.host}:{args.port}/viewer/")
+    with ReusableTCPServer((args.host, args.port), ViewerRootHandler) as httpd:
+        print(f"Serving {VIEWER_ROOT} at http://{args.host}:{args.port}/")
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:

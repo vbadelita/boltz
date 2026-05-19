@@ -65,7 +65,10 @@ def main() -> int:
     dest_root = (
         args.dest_root.resolve()
         if args.dest_root
-        else (REPO_ROOT / hosts_config.get("viewer", {}).get("publish_root", "published"))
+        else (
+            REPO_ROOT
+            / hosts_config.get("viewer", {}).get("publish_root", "viewer/published")
+        )
     )
     destination = dest_root / experiment_slug / run_id
     destination.parent.mkdir(parents=True, exist_ok=True)

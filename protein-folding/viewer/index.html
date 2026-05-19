@@ -3,126 +3,279 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>protein-folding viewer</title>
+    <title>Boltz Results Viewer</title>
     <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
     <style>
       :root {
         color-scheme: light;
-        --bg: #f5f3ef;
-        --panel: #fffdf9;
-        --line: #d8d1c6;
-        --text: #1e252c;
-        --muted: #64707b;
-        --accent: #0b6e4f;
-        --accent-soft: #dff1e8;
+        --bg: #f7f7f4;
+        --panel: #ffffff;
+        --text: #1d2329;
+        --muted: #68737d;
+        --line: #d8ddd8;
+        --accent: #006d77;
+        --accent-soft: #e4f3f3;
+        --danger: #b84a32;
+        --shadow: 0 18px 45px rgba(30, 38, 44, 0.12);
       }
 
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
+        height: 100vh;
+        overflow: hidden;
         background: var(--bg);
         color: var(--text);
-        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
       }
 
       .app {
         display: grid;
-        grid-template-columns: 360px 1fr;
-        min-height: 100vh;
+        grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+        height: 100vh;
+        overflow: hidden;
       }
 
-      aside, main, footer { min-width: 0; }
       aside {
-        display: flex;
-        flex-direction: column;
         border-right: 1px solid var(--line);
         background: var(--panel);
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
       }
 
-      header, .controls, footer {
-        padding: 16px;
+      header {
+        padding: 18px 18px 14px;
         border-bottom: 1px solid var(--line);
       }
 
-      h1, h2, p { margin: 0; }
-      .controls, .target-list, .detail {
+      h1 {
+        margin: 0;
+        font-size: 19px;
+        line-height: 1.2;
+        font-weight: 720;
+        letter-spacing: 0;
+      }
+
+      .metrics {
         display: grid;
-        gap: 10px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .metric {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 9px 10px;
+        min-width: 0;
+      }
+
+      .metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.1;
+        white-space: nowrap;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 18px;
+        line-height: 1.1;
+      }
+
+      .controls {
+        padding: 14px 18px 12px;
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        gap: 11px;
       }
 
       label {
         display: grid;
-        gap: 4px;
-        color: var(--muted);
+        gap: 5px;
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 680;
+        color: var(--muted);
       }
 
-      select, input, button, a.action {
-        min-height: 38px;
-        border-radius: 8px;
+      select,
+      input {
+        width: 100%;
         border: 1px solid var(--line);
-        padding: 8px 10px;
+        border-radius: 8px;
+        background: #fff;
+        color: var(--text);
         font: inherit;
-        color: inherit;
-        background: white;
+        font-size: 13px;
+        padding: 9px 10px;
+        min-height: 38px;
       }
 
-      button, a.action { cursor: pointer; }
-      a.action {
-        display: inline-flex;
+      .toggles {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .toggle {
+        display: flex;
         align-items: center;
-        text-decoration: none;
+        gap: 8px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        color: var(--text);
+        min-height: 38px;
+      }
+
+      .toggle input {
+        width: 16px;
+        min-height: 16px;
+        margin: 0;
       }
 
       .target-list {
-        padding: 12px;
         overflow: auto;
+        flex: 1;
+        padding: 10px;
       }
 
       .target {
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        padding: 10px;
-        background: white;
-      }
-
-      .target.active {
-        border-color: var(--accent);
-        background: var(--accent-soft);
-      }
-
-      .target button {
         width: 100%;
-        text-align: left;
-        border: 0;
+        border: 1px solid transparent;
         background: transparent;
-        padding: 0;
+        border-radius: 8px;
+        text-align: left;
+        padding: 10px;
+        display: grid;
+        gap: 6px;
+        cursor: pointer;
+        color: inherit;
       }
 
-      .meta {
+      .target:hover,
+      .target.active {
+        background: var(--accent-soft);
+        border-color: #b7dbdc;
+      }
+
+      .target-title {
+        font-size: 13px;
+        line-height: 1.25;
+        font-weight: 680;
+        overflow-wrap: anywhere;
+      }
+
+      .target-meta {
         display: flex;
-        flex-wrap: wrap;
         gap: 8px;
-        margin-top: 6px;
-        font-size: 12px;
+        align-items: center;
+        flex-wrap: wrap;
         color: var(--muted);
+        font-size: 12px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 2px 7px;
+        background: #edf0ed;
+        color: #475059;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .badge.folded {
+        background: #dceefc;
+        color: #135c92;
+      }
+
+      .badge.low {
+        background: #fff0c2;
+        color: #796118;
+      }
+
+      .badge.failed {
+        background: #fde5dc;
+        color: var(--danger);
       }
 
       main {
+        min-width: 0;
         display: grid;
-        grid-template-rows: auto minmax(360px, 1fr) auto;
+        grid-template-rows: auto minmax(280px, 1fr) auto;
+        min-height: 0;
+        height: 100vh;
+        overflow: hidden;
       }
 
-      .detail {
-        padding: 16px;
+      .viewer-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 18px;
         border-bottom: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.92);
+        background: rgba(255, 255, 255, 0.76);
       }
 
-      .viewer {
+      .viewer-title {
+        min-width: 0;
+      }
+
+      .viewer-title h2 {
+        margin: 0;
+        font-size: 17px;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+      }
+
+      .viewer-title p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      button.action {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--text);
+        border-radius: 8px;
+        min-height: 38px;
+        padding: 8px 11px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      button.action.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .stage {
         position: relative;
-        background: #faf8f3;
+        min-height: 280px;
+        background: #fbfbf8;
       }
 
       #viewer {
@@ -130,48 +283,138 @@
         inset: 0;
       }
 
+      .empty,
       .loading {
         position: absolute;
         inset: 0;
         display: grid;
         place-items: center;
         color: var(--muted);
+        font-size: 14px;
+        pointer-events: none;
       }
 
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 8px;
-      }
-
-      .card {
-        border: 1px solid var(--line);
+      .legend {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        width: min(320px, calc(100% - 36px));
+        padding: 11px;
         border-radius: 8px;
-        padding: 8px 10px;
-        background: white;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: var(--shadow);
       }
 
-      .card span {
-        display: block;
+      .scale {
+        height: 12px;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
+          #ff7d45 0%,
+          #ffdb4d 50%,
+          #65cbf3 70%,
+          #0053d6 90%,
+          #0053d6 100%
+        );
+      }
+
+      .scale-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 6px;
         color: var(--muted);
         font-size: 11px;
       }
 
-      .card strong {
+      footer {
+        border-top: 1px solid var(--line);
+        background: var(--panel);
+        padding: 12px 18px;
+        display: grid;
+        gap: 8px;
+        max-height: 34vh;
+        overflow: auto;
+      }
+
+      .selected-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .selected-grid div {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 9px;
+        min-width: 0;
+      }
+
+      .selected-grid span {
+        color: var(--muted);
+        font-size: 11px;
         display: block;
-        margin-top: 4px;
+      }
+
+      .selected-grid strong {
+        display: block;
+        font-size: 13px;
+        margin-top: 3px;
         overflow-wrap: anywhere;
       }
 
-      .actions {
+      .output-links {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
       }
 
-      @media (max-width: 900px) {
-        .app { grid-template-columns: 1fr; }
-        .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .output-links a {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 7px 10px;
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 680;
+      }
+
+      @media (max-width: 860px) {
+        .app {
+          grid-template-columns: 1fr;
+          height: auto;
+          overflow: auto;
+        }
+
+        aside {
+          min-height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+          overflow: visible;
+        }
+
+        .target-list {
+          max-height: 310px;
+        }
+
+        .viewer-head {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .selected-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        main {
+          height: auto;
+          overflow: visible;
+        }
+
+        footer {
+          max-height: none;
+          overflow: visible;
+        }
       }
     </style>
   </head>
@@ -179,13 +422,18 @@
     <div class="app">
       <aside>
         <header>
-          <h1>protein-folding</h1>
-          <p id="summary">Loading database</p>
+          <h1>Boltz Results</h1>
+          <div class="metrics">
+            <div class="metric"><span>Targets</span><strong id="targetCount">0</strong></div>
+            <div class="metric"><span>Structures</span><strong id="modelCount">0</strong></div>
+            <div class="metric"><span>Folded</span><strong id="foldedCount">0</strong></div>
+          </div>
         </header>
+
         <section class="controls">
           <label>
             Search
-            <input id="searchInput" type="search" placeholder="Target or experiment" />
+            <input id="search" type="search" placeholder="Target name" />
           </label>
           <label>
             Experiment
@@ -196,89 +444,146 @@
             <select id="targetSelect"></select>
           </label>
           <label>
-            Sample
-            <select id="sampleSelect"></select>
+            Config
+            <select id="modelSelect"></select>
           </label>
+          <div class="toggles">
+            <label class="toggle">
+              <input id="bestOnly" type="checkbox" />
+              Best only
+            </label>
+            <label class="toggle">
+              <input id="sticks" type="checkbox" />
+              Side chains
+            </label>
+          </div>
         </section>
+
         <section id="targetList" class="target-list"></section>
       </aside>
 
       <main>
-        <section class="detail">
-          <h2 id="title">Select a result</h2>
-          <p id="subtitle"></p>
+        <section class="viewer-head">
+          <div class="viewer-title">
+            <h2 id="selectedTitle">Loading structures</h2>
+            <p id="selectedSubtitle"></p>
+          </div>
           <div class="actions">
-            <a id="shareLink" class="action" href="#">Copyable Link</a>
-            <a id="structureLink" class="action" href="#" target="_blank" rel="noreferrer">Open CIF</a>
-            <a id="confidenceLink" class="action" href="#" target="_blank" rel="noreferrer">Open confidence JSON</a>
-            <a id="databaseLink" class="action" href="./database.csv" target="_blank" rel="noreferrer">Open database CSV</a>
+            <button id="openFolder" class="action">Open Folder</button>
+            <button id="spinToggle" class="action">Spin</button>
+            <button id="resetView" class="action primary">Reset View</button>
           </div>
         </section>
 
-        <section class="viewer">
+        <section class="stage">
           <div id="viewer"></div>
-          <div id="loading" class="loading">Loading structure</div>
+          <div id="loading" class="loading">Loading</div>
+          <div class="legend">
+            <div class="scale"></div>
+            <div class="scale-labels">
+              <span>&lt;50</span>
+              <span>50</span>
+              <span>70</span>
+              <span>90+</span>
+            </div>
+          </div>
         </section>
 
         <footer>
-          <div class="grid">
-            <div class="card"><span>Experiment</span><strong id="metaExperiment">-</strong></div>
-            <div class="card"><span>Target</span><strong id="metaTarget">-</strong></div>
-            <div class="card"><span>Sample</span><strong id="metaSample">-</strong></div>
-            <div class="card"><span>Status</span><strong id="metaStatus">-</strong></div>
-            <div class="card"><span>Assembly</span><strong id="metaAssembly">-</strong></div>
-            <div class="card"><span>Length</span><strong id="metaLength">-</strong></div>
-            <div class="card"><span>pLDDT</span><strong id="metaPlddt">-</strong></div>
-            <div class="card"><span>Confidence</span><strong id="metaConfidence">-</strong></div>
+          <div class="selected-grid">
+            <div><span>Config</span><strong id="metaCondition">-</strong></div>
+            <div><span>Rank</span><strong id="metaRank">-</strong></div>
+            <div><span>pLDDT</span><strong id="metaPlddt">-</strong></div>
+            <div><span>pTM</span><strong id="metaPtm">-</strong></div>
+            <div><span>ipTM</span><strong id="metaIptm">-</strong></div>
+            <div><span>Confidence</span><strong id="metaConfidence">-</strong></div>
+            <div><span>Length</span><strong id="metaLength">-</strong></div>
+            <div><span>MSA used</span><strong id="metaMsaDepth">-</strong></div>
+            <div><span>MSA raw</span><strong id="metaMsaRawDepth">-</strong></div>
+            <div><span>Sampling</span><strong id="metaSampling">-</strong></div>
+            <div><span>Diffusion</span><strong id="metaDiffusion">-</strong></div>
+            <div><span>Parallel</span><strong id="metaParallel">-</strong></div>
+            <div><span>Recycling</span><strong id="metaRecycling">-</strong></div>
+            <div><span>ipLDDT</span><strong id="metaIplddt">-</strong></div>
+            <div><span>PDE</span><strong id="metaPde">-</strong></div>
+            <div><span>ipDE</span><strong id="metaIpde">-</strong></div>
+            <div><span>Status</span><strong id="metaStatus">-</strong></div>
+            <div><span>Folder</span><strong id="metaFolder">-</strong></div>
+            <div><span>Job ID</span><strong id="metaJob">-</strong></div>
+          </div>
+          <div class="output-links">
+            <a id="structureLink" href="#" target="_blank" rel="noreferrer">Open CIF</a>
+            <a id="confidenceLink" href="#" target="_blank" rel="noreferrer">Open confidence JSON</a>
+            <a id="metadataLink" href="./database.csv" target="_blank" rel="noreferrer">Open database CSV</a>
           </div>
         </footer>
       </main>
     </div>
 
+    <input
+      id="folderInput"
+      type="file"
+      webkitdirectory
+      directory
+      multiple
+      hidden
+    />
+
     <script>
+      const metadataUrl = "./database.csv";
+      const isFileProtocol = window.location.protocol === "file:";
       const state = {
         rows: [],
+        bestRows: [],
+        selectedExperiment: "__all__",
+        selectedJobId: null,
+        selectedRow: null,
         viewer: null,
-        selectedExperiment: "",
-        selectedTarget: "",
-        selectedSample: "",
+        spinning: false,
+        fileMap: new Map(),
       };
 
       const els = {
-        summary: document.getElementById("summary"),
-        searchInput: document.getElementById("searchInput"),
+        targetList: document.getElementById("targetList"),
+        search: document.getElementById("search"),
         experimentSelect: document.getElementById("experimentSelect"),
         targetSelect: document.getElementById("targetSelect"),
-        sampleSelect: document.getElementById("sampleSelect"),
-        targetList: document.getElementById("targetList"),
-        title: document.getElementById("title"),
-        subtitle: document.getElementById("subtitle"),
-        shareLink: document.getElementById("shareLink"),
+        modelSelect: document.getElementById("modelSelect"),
+        bestOnly: document.getElementById("bestOnly"),
+        sticks: document.getElementById("sticks"),
+        selectedTitle: document.getElementById("selectedTitle"),
+        selectedSubtitle: document.getElementById("selectedSubtitle"),
+        loading: document.getElementById("loading"),
+        openFolder: document.getElementById("openFolder"),
+        folderInput: document.getElementById("folderInput"),
+        spinToggle: document.getElementById("spinToggle"),
+        resetView: document.getElementById("resetView"),
+        targetCount: document.getElementById("targetCount"),
+        modelCount: document.getElementById("modelCount"),
+        foldedCount: document.getElementById("foldedCount"),
+        metaCondition: document.getElementById("metaCondition"),
+        metaRank: document.getElementById("metaRank"),
+        metaPlddt: document.getElementById("metaPlddt"),
+        metaPtm: document.getElementById("metaPtm"),
+        metaIptm: document.getElementById("metaIptm"),
+        metaConfidence: document.getElementById("metaConfidence"),
+        metaLength: document.getElementById("metaLength"),
+        metaMsaDepth: document.getElementById("metaMsaDepth"),
+        metaMsaRawDepth: document.getElementById("metaMsaRawDepth"),
+        metaSampling: document.getElementById("metaSampling"),
+        metaDiffusion: document.getElementById("metaDiffusion"),
+        metaParallel: document.getElementById("metaParallel"),
+        metaRecycling: document.getElementById("metaRecycling"),
+        metaIplddt: document.getElementById("metaIplddt"),
+        metaPde: document.getElementById("metaPde"),
+        metaIpde: document.getElementById("metaIpde"),
+        metaStatus: document.getElementById("metaStatus"),
+        metaFolder: document.getElementById("metaFolder"),
+        metaJob: document.getElementById("metaJob"),
         structureLink: document.getElementById("structureLink"),
         confidenceLink: document.getElementById("confidenceLink"),
-        loading: document.getElementById("loading"),
-        metaExperiment: document.getElementById("metaExperiment"),
-        metaTarget: document.getElementById("metaTarget"),
-        metaSample: document.getElementById("metaSample"),
-        metaStatus: document.getElementById("metaStatus"),
-        metaAssembly: document.getElementById("metaAssembly"),
-        metaLength: document.getElementById("metaLength"),
-        metaPlddt: document.getElementById("metaPlddt"),
-        metaConfidence: document.getElementById("metaConfidence"),
+        metadataLink: document.getElementById("metadataLink"),
       };
-
-      function normalizeRow(row) {
-        return {
-          ...row,
-          experiment_slug: row.experiment_slug || slugify(row.experiment || ""),
-          target_slug: row.target_slug || slugify(row.target_id || row.target_label || ""),
-          sample_rank: row.sample_rank || "0",
-        };
-      }
-
-      function slugify(value) {
-        return String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "item";
-      }
 
       function parseCsv(text) {
         const rows = [];
@@ -315,147 +620,245 @@
           row.push(field);
           rows.push(row);
         }
-        const header = rows.shift() || [];
+        const header = rows.shift();
         return rows
           .filter((values) => values.length === header.length)
-          .map((values) => Object.fromEntries(header.map((key, index) => [key, values[index]])));
+          .map((values) =>
+            Object.fromEntries(header.map((key, index) => [key, values[index]])),
+          );
       }
 
-      async function loadRows() {
-        const response = await fetch(`./database.csv?t=${Date.now()}`);
-        state.rows = parseCsv(await response.text()).map(normalizeRow);
+      function slugify(value) {
+        return String(value)
+          .toLowerCase()
+          .replaceAll(/[^a-z0-9]+/g, "-")
+          .replaceAll(/^-+|-+$/g, "") || "item";
       }
 
-      function uniqueBy(items, getter) {
-        const seen = new Set();
-        return items.filter((item) => {
-          const key = getter(item);
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
+      function numeric(row, key) {
+        const value = Number.parseFloat(row[key]);
+        return Number.isFinite(value) ? value : null;
+      }
+
+      function quality(row) {
+        const plddt = numeric(row, "complex_plddt");
+        if (plddt === null) return "failed";
+        if (plddt >= 0.7) return "folded";
+        if (plddt >= 0.5) return "low";
+        return "failed";
+      }
+
+      function inferFolder(row) {
+        const explicit = String(row.folder || "").trim();
+        if (explicit) return explicit;
+        const structurePath = String(row.structure_path || "").trim();
+        const normalized = normalizeRelativePath(structurePath);
+        return normalized.split("/")[0] || "unknown";
+      }
+
+      function experimentKey(row) {
+        return row.experiment_slug || slugify(row.experiment || "");
+      }
+
+      function targetSlug(row) {
+        return row.target_slug || slugify(row.target_id || row.target_label || "");
+      }
+
+      function targetKey(row) {
+        return `${experimentKey(row)}::${targetSlug(row)}`;
+      }
+
+      function sampleKey(row) {
+        return `${row.config}|${row.sample_rank}`;
+      }
+
+      function normalizeRow(row) {
+        return {
+          ...row,
+          folder: inferFolder(row),
+          target_id: row.target_id || row.job_id || "",
+          target_label:
+            row.target_label || row.fasta_header || row.protein_label || row.job_id || "",
+          config: row.config || row.condition || "",
+          sample_rank: row.sample_rank || row.model_rank || "0",
+          length: row.length || row.total_residues || row.total_polymer_residues || "",
+          experiment_slug: row.experiment_slug || slugify(row.experiment || ""),
+          target_slug: row.target_slug || slugify(row.target_id || row.target_label || ""),
+        };
+      }
+
+      function bestByTarget(rows) {
+        const best = new Map();
+        rows.forEach((row) => {
+          if (row.status !== "ok") return;
+          const current = best.get(targetKey(row));
+          if (!current || numeric(row, "complex_plddt") > numeric(current, "complex_plddt")) {
+            best.set(targetKey(row), row);
+          }
         });
-      }
-
-      function experimentRows() {
-        const rows = state.selectedExperiment
-          ? state.rows.filter((row) => row.experiment_slug === state.selectedExperiment)
-          : state.rows;
-        const query = els.searchInput.value.trim().toLowerCase();
-        if (!query) return rows;
-        return rows.filter((row) =>
-          [row.experiment, row.target_label, row.target_id, row.target_slug]
-            .join(" ")
-            .toLowerCase()
-            .includes(query),
+        return Array.from(best.values()).sort((a, b) =>
+          targetKey(a).localeCompare(targetKey(b)),
         );
       }
 
-      function targetRows() {
-        return state.selectedTarget
-          ? experimentRows().filter((row) => row.target_slug === state.selectedTarget)
-          : experimentRows();
+      function formatScore(value) {
+        return value === null ? "-" : value.toFixed(3);
       }
 
-      function selectedRow() {
-        return targetRows().find((row) => row.sample_rank === state.selectedSample) || null;
+      function structureUrl(row) {
+        return row.structure_path;
       }
 
-      function updateSummary() {
-        const targetCount = uniqueBy(state.rows, (row) => `${row.experiment_slug}:${row.target_slug}`).length;
-        els.summary.textContent = `${state.rows.length} samples across ${targetCount} targets`;
+      function normalizeRelativePath(path) {
+        return String(path).replaceAll("\\", "/").replace(/^\.\//, "");
       }
 
-      function renderExperimentSelect() {
-        const experiments = uniqueBy(state.rows, (row) => row.experiment_slug)
-          .sort((a, b) => a.experiment.localeCompare(b.experiment));
-        els.experimentSelect.innerHTML = "";
-        const all = document.createElement("option");
-        all.value = "";
-        all.textContent = "All experiments";
-        els.experimentSelect.appendChild(all);
-        experiments.forEach((row) => {
-          const option = document.createElement("option");
-          option.value = row.experiment_slug;
-          option.textContent = row.experiment;
-          els.experimentSelect.appendChild(option);
-        });
-        els.experimentSelect.value = state.selectedExperiment;
-      }
-
-      function renderTargetList() {
-        const rows = uniqueBy(experimentRows(), (row) => row.target_slug);
-        els.targetList.innerHTML = "";
-        rows.forEach((row) => {
-          const item = document.createElement("div");
-          item.className = `target ${row.target_slug === state.selectedTarget ? "active" : ""}`;
-          item.innerHTML = `
-            <button type="button">
-              <strong>${row.target_label}</strong>
-              <div class="meta">
-                <span>${row.experiment}</span>
-                <span>${row.assembly || "-"}</span>
-                <span>${row.length || "-"} aa</span>
-              </div>
-            </button>
-          `;
-          item.querySelector("button").addEventListener("click", () => {
-            state.selectedExperiment = row.experiment_slug;
-            state.selectedTarget = row.target_slug;
-            const rowsForTarget = targetRows();
-            state.selectedSample = rowsForTarget[0]?.sample_rank || "";
-            render();
-          });
-          els.targetList.appendChild(item);
-        });
-      }
-
-      function renderTargetSelect() {
-        const rows = uniqueBy(experimentRows(), (row) => row.target_slug);
-        els.targetSelect.innerHTML = "";
-        rows.forEach((row) => {
-          const option = document.createElement("option");
-          option.value = row.target_slug;
-          option.textContent = row.target_label;
-          els.targetSelect.appendChild(option);
-        });
-        if (!state.selectedTarget && rows.length) {
-          state.selectedTarget = rows[0].target_slug;
+      function resolveProjectPath(path) {
+        const normalized = normalizeRelativePath(path);
+        if (isFileProtocol && normalized.startsWith("/")) {
+          return normalized.slice(1);
         }
-        els.targetSelect.value = state.selectedTarget;
+        return normalized.startsWith("/") ? normalized.slice(1) : normalized;
       }
 
-      function renderSampleSelect() {
-        const rows = targetRows().sort((a, b) => Number(a.sample_rank) - Number(b.sample_rank));
-        els.sampleSelect.innerHTML = "";
-        rows.forEach((row) => {
-          const option = document.createElement("option");
-          option.value = row.sample_rank;
-          option.textContent = `sample ${row.sample_rank}`;
-          els.sampleSelect.appendChild(option);
-        });
-        if (!state.selectedSample && rows.length) {
-          state.selectedSample = rows[0].sample_rank;
-        }
-        els.sampleSelect.value = state.selectedSample;
+      function rowsForSelectedExperiment(rows) {
+        if (state.selectedExperiment === "__all__") return rows;
+        return rows.filter((row) => experimentKey(row) === state.selectedExperiment);
       }
 
-      function updateUrl() {
+      function filteredBestRows() {
+        return rowsForSelectedExperiment(state.bestRows);
+      }
+
+      function activeRows() {
+        const rows = rowsForSelectedExperiment(state.rows);
+        return els.bestOnly.checked ? filteredBestRows() : rows;
+      }
+
+      function selectedTargetRows() {
+        return activeRows().filter((row) => targetKey(row) === state.selectedJobId);
+      }
+
+      function syncUrl() {
         const params = new URLSearchParams();
-        if (state.selectedExperiment) params.set("e", state.selectedExperiment);
-        if (state.selectedTarget) params.set("t", state.selectedTarget);
-        if (state.selectedSample) params.set("s", state.selectedSample);
-        const url = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+        if (state.selectedExperiment && state.selectedExperiment !== "__all__") {
+          params.set("e", state.selectedExperiment);
+        }
+        if (state.selectedJobId) {
+          const selected = state.selectedRow || selectedTargetRows()[0];
+          if (selected) params.set("t", targetSlug(selected));
+        }
+        if (state.selectedRow) {
+          params.set("s", sampleKey(state.selectedRow));
+        }
+        const query = params.toString();
+        const url = `${window.location.pathname}${query ? `?${query}` : ""}`;
         window.history.replaceState({}, "", url);
-        els.shareLink.href = url;
-        els.shareLink.textContent = `${window.location.origin}${url}`;
       }
 
-      function resolveAssetPath(path) {
-        const normalized = String(path || "").replace(/^\.?\//, "");
-        return normalized.startsWith("/") ? normalized : `../${normalized}`;
+      function readSelectionFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+          experiment: params.get("e"),
+          target: params.get("t"),
+          sample: params.get("s"),
+        };
       }
 
-      function colorByPlddt(atom) {
+      function applyUrlSelection() {
+        const selection = readSelectionFromUrl();
+        if (selection.experiment) {
+          state.selectedExperiment = selection.experiment;
+        }
+        const rows = activeRows();
+        if (!rows.length) {
+          state.selectedJobId = null;
+          state.selectedRow = null;
+          return;
+        }
+
+        if (selection.target) {
+          const row = rows.find((item) => targetSlug(item) === selection.target);
+          if (row) {
+            state.selectedJobId = targetKey(row);
+          }
+        }
+        if (!state.selectedJobId || !rows.some((row) => targetKey(row) === state.selectedJobId)) {
+          state.selectedJobId = targetKey(filteredBestRows()[0] || rows[0]);
+        }
+
+        const targetRows = selectedTargetRows();
+        if (selection.sample) {
+          const row = targetRows.find((item) => sampleKey(item) === selection.sample);
+          if (row) {
+            state.selectedRow = row;
+            return;
+          }
+        }
+        state.selectedRow = targetRows[0] || null;
+      }
+
+      function setRows(rows) {
+        state.rows = rows
+          .map(normalizeRow)
+          .filter((row) => row.status === "ok")
+          .sort((a, b) => {
+            const target = targetKey(a).localeCompare(targetKey(b));
+            if (target !== 0) return target;
+            const byPlddt = numeric(b, "complex_plddt") - numeric(a, "complex_plddt");
+            if (byPlddt !== 0) return byPlddt;
+            return Number(a.sample_rank) - Number(b.sample_rank);
+          });
+        state.bestRows = bestByTarget(state.rows);
+        applyUrlSelection();
+        renderExperimentSelect();
+        updateCounts();
+        renderTargets();
+        renderModelSelect();
+        if (state.selectedRow) {
+          loadSelected();
+        }
+      }
+
+      async function readTextFile(path) {
+        const resolvedPath = resolveProjectPath(path);
+        if (!isFileProtocol) {
+          const response = await fetch(`${encodeURI(resolvedPath)}?t=${Date.now()}`);
+          if (!response.ok) {
+            throw new Error(`Could not load ${path}`);
+          }
+          return response.text();
+        }
+        const file = state.fileMap.get(resolvedPath);
+        if (!file) {
+          throw new Error(`Missing local file: ${path}`);
+        }
+        return file.text();
+      }
+
+      function fileHref(path) {
+        const resolvedPath = resolveProjectPath(path);
+        if (!isFileProtocol) {
+          return resolvedPath;
+        }
+        const file = state.fileMap.get(resolvedPath);
+        return file ? URL.createObjectURL(file) : "#";
+      }
+
+      function loadFolderFiles(files) {
+        state.fileMap = new Map();
+        Array.from(files).forEach((file) => {
+          const relativePath = normalizeRelativePath(file.webkitRelativePath || file.name);
+          const parts = relativePath.split("/");
+          const trimmed =
+            parts.length > 1 && parts[0] === "viewer"
+              ? parts.slice(1).join("/")
+              : relativePath;
+          state.fileMap.set(trimmed, file);
+        });
+      }
+
+      function plddtColor(atom) {
         const b = atom.b ?? 0;
         if (b >= 90) return "#0053d6";
         if (b >= 70) return "#65cbf3";
@@ -463,78 +866,255 @@
         return "#ff7d45";
       }
 
-      async function renderSelectedRow() {
-        const row = selectedRow();
-        if (!row) {
-          els.title.textContent = "No matching result";
-          els.subtitle.textContent = "";
+      function renderExperimentSelect() {
+        const current = state.selectedExperiment;
+        const experiments = Array.from(
+          new Map(
+            state.rows.map((row) => [experimentKey(row), row.experiment]),
+          ).entries(),
+        ).sort((a, b) => a[1].localeCompare(b[1]));
+        els.experimentSelect.innerHTML = "";
+        const allOption = document.createElement("option");
+        allOption.value = "__all__";
+        allOption.textContent = `All experiments (${experiments.length})`;
+        els.experimentSelect.appendChild(allOption);
+        experiments.forEach(([slug, label]) => {
+          const option = document.createElement("option");
+          option.value = slug;
+          option.textContent = label;
+          els.experimentSelect.appendChild(option);
+        });
+        els.experimentSelect.value = current;
+      }
+
+      function renderTargets() {
+        const query = els.search.value.trim().toLowerCase();
+        const rows = filteredBestRows().filter((row) => {
+          return (
+            !query ||
+            String(row.target_label).toLowerCase().includes(query) ||
+            String(row.target_id).toLowerCase().includes(query) ||
+            String(row.folder).toLowerCase().includes(query) ||
+            String(row.experiment || "").toLowerCase().includes(query)
+          );
+        });
+        els.targetList.innerHTML = "";
+        rows.forEach((row) => {
+          const button = document.createElement("button");
+          button.className = `target ${targetKey(row) === state.selectedJobId ? "active" : ""}`;
+          button.type = "button";
+          const q = quality(row);
+          button.innerHTML = `
+            <span class="target-title">${escapeHtml(row.target_label)}</span>
+            <span class="target-meta">
+              <span class="badge ${q}">${q}</span>
+              <span>${escapeHtml(row.folder)}</span>
+              <span>${escapeHtml(row.assembly || "monomer")}</span>
+              <span>${escapeHtml(row.length)} residues</span>
+              <span>pLDDT ${formatScore(numeric(row, "complex_plddt"))}</span>
+            </span>
+          `;
+          button.addEventListener("click", () => selectTarget(targetKey(row)));
+          els.targetList.appendChild(button);
+        });
+        renderTargetSelect(rows);
+      }
+
+      function renderTargetSelect(rows = state.bestRows) {
+        const current = state.selectedJobId;
+        const filteredRows = rows.filter((row) =>
+          state.selectedExperiment === "__all__" || experimentKey(row) === state.selectedExperiment,
+        );
+        els.targetSelect.innerHTML = "";
+        filteredRows.forEach((row) => {
+          const option = document.createElement("option");
+          option.value = targetKey(row);
+          option.textContent = row.target_label;
+          els.targetSelect.appendChild(option);
+        });
+        if (current && filteredRows.some((row) => targetKey(row) === current)) {
+          els.targetSelect.value = current;
           return;
         }
+        if (filteredRows.length) {
+          els.targetSelect.value = targetKey(filteredRows[0]);
+        }
+      }
 
-        updateUrl();
+      function renderModelSelect() {
+        const rows = selectedTargetRows();
+        els.modelSelect.innerHTML = "";
+        rows.forEach((row, index) => {
+          const option = document.createElement("option");
+          option.value = sampleKey(row);
+          option.textContent = `${configLabel(row)} / sample ${row.sample_rank} / pLDDT ${formatScore(
+            numeric(row, "complex_plddt"),
+          )}`;
+          els.modelSelect.appendChild(option);
+          if (state.selectedRow && sampleKey(state.selectedRow) === sampleKey(row)) {
+            els.modelSelect.selectedIndex = index;
+          }
+        });
+        if (
+          rows.length &&
+          (!state.selectedRow || targetKey(state.selectedRow) !== state.selectedJobId)
+        ) {
+          state.selectedRow = rows[0];
+        }
+      }
+
+      function selectTarget(targetId) {
+        state.selectedJobId = targetId;
+        els.targetSelect.value = targetId;
+        const rows = selectedTargetRows();
+        state.selectedRow = rows[0] || null;
+        renderTargets();
+        renderModelSelect();
+        loadSelected();
+      }
+
+      function selectModel() {
+        const selected = els.modelSelect.value;
+        state.selectedRow = selectedTargetRows().find((row) => sampleKey(row) === selected) || state.selectedRow;
+        loadSelected();
+      }
+
+      async function loadSelected() {
+        const row = state.selectedRow;
+        if (!row) return;
+        syncUrl();
         els.loading.style.display = "grid";
-        els.title.textContent = row.target_label;
-        els.subtitle.textContent = `${row.experiment} / ${row.assembly || "-"} / sample ${row.sample_rank}`;
-        els.structureLink.href = resolveAssetPath(row.structure_path);
-        els.confidenceLink.href = resolveAssetPath(row.confidence_json);
-        els.metaExperiment.textContent = row.experiment;
-        els.metaTarget.textContent = row.target_id;
-        els.metaSample.textContent = row.sample_rank;
-        els.metaStatus.textContent = row.status;
-        els.metaAssembly.textContent = row.assembly || "-";
-        els.metaLength.textContent = row.length || "-";
-        els.metaPlddt.textContent = row.complex_plddt || "-";
-        els.metaConfidence.textContent = row.confidence_score || "-";
+        els.selectedTitle.textContent = row.target_label;
+        els.selectedSubtitle.textContent =
+          `${row.folder} / ${row.assembly || "monomer"}, ${row.length} residues`;
+        els.metaCondition.textContent = configLabel(row);
+        els.metaRank.textContent = row.sample_rank;
+        els.metaPlddt.textContent = formatScore(numeric(row, "complex_plddt"));
+        els.metaPtm.textContent = formatScore(numeric(row, "ptm"));
+        els.metaIptm.textContent = formatScore(numeric(row, "iptm"));
+        els.metaConfidence.textContent = formatScore(numeric(row, "confidence_score"));
+        els.metaLength.textContent = row.length;
+        els.metaMsaDepth.textContent = row.msa_depth || "-";
+        els.metaMsaRawDepth.textContent = row.msa_raw_depth || "-";
+        els.metaSampling.textContent = row.sampling_steps;
+        els.metaDiffusion.textContent = row.diffusion_samples;
+        els.metaParallel.textContent = row.max_parallel_samples;
+        els.metaRecycling.textContent = row.recycling_steps;
+        els.metaIplddt.textContent = formatScore(numeric(row, "complex_iplddt"));
+        els.metaPde.textContent = formatScore(numeric(row, "complex_pde"));
+        els.metaIpde.textContent = formatScore(numeric(row, "complex_ipde"));
+        els.metaStatus.textContent = quality(row);
+        els.metaFolder.textContent = row.folder;
+        els.metaJob.textContent = row.target_id;
+        els.structureLink.href = fileHref(row.structure_path);
+        els.confidenceLink.href = fileHref(row.confidence_json);
 
-        const response = await fetch(resolveAssetPath(row.structure_path));
-        const cif = await response.text();
+        const cif = await readTextFile(structureUrl(row));
         state.viewer.clear();
         state.viewer.addModel(cif, "mmcif");
-        state.viewer.setStyle({}, { cartoon: { colorfunc: colorByPlddt } });
+        state.viewer.setStyle({}, { cartoon: { colorfunc: plddtColor } });
+        if (els.sticks.checked) {
+          state.viewer.addStyle({}, { stick: { radius: 0.08, colorfunc: plddtColor } });
+        }
         state.viewer.zoomTo();
         state.viewer.render();
+        state.viewer.spin(state.spinning);
         els.loading.style.display = "none";
       }
 
-      function syncStateFromUrl() {
-        const params = new URLSearchParams(window.location.search);
-        state.selectedExperiment = params.get("e") || state.selectedExperiment;
-        state.selectedTarget = params.get("t") || state.selectedTarget;
-        state.selectedSample = params.get("s") || state.selectedSample;
+      function updateCounts() {
+        const experimentRows = rowsForSelectedExperiment(state.rows);
+        const experimentBestRows = rowsForSelectedExperiment(state.bestRows);
+        const targetCount = new Set(experimentRows.map((row) => targetKey(row))).size;
+        els.targetCount.textContent = String(targetCount);
+        els.modelCount.textContent = String(
+          experimentRows.filter((row) => row.status === "ok").length,
+        );
+        els.foldedCount.textContent = String(
+          experimentBestRows.filter((row) => quality(row) === "folded").length,
+        );
       }
 
-      function render() {
-        syncStateFromUrl();
-        renderExperimentSelect();
-        renderTargetSelect();
-        renderSampleSelect();
-        renderTargetList();
-        updateSummary();
-        renderSelectedRow();
+      function configLabel(row) {
+        return `${row.config} (s${row.sampling_steps}, n${row.diffusion_samples}, p${row.max_parallel_samples}, r${row.recycling_steps})`;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
       }
 
       async function init() {
-        state.viewer = $3Dmol.createViewer("viewer", { backgroundColor: "#faf8f3" });
-        await loadRows();
-        syncStateFromUrl();
-        render();
+        state.viewer = $3Dmol.createViewer("viewer", { backgroundColor: "#fbfbf8" });
+        els.openFolder.style.display = isFileProtocol ? "inline-flex" : "none";
+        if (isFileProtocol) {
+          els.selectedTitle.textContent = "Open viewer";
+          els.selectedSubtitle.textContent =
+            "Choose this folder so the browser can read metadata and structure files.";
+          els.loading.style.display = "none";
+          return;
+        }
+        setRows(parseCsv(await readTextFile(metadataUrl)));
       }
 
-      els.searchInput.addEventListener("input", () => render());
+      els.search.addEventListener("input", renderTargets);
       els.experimentSelect.addEventListener("change", () => {
         state.selectedExperiment = els.experimentSelect.value;
-        state.selectedTarget = "";
-        state.selectedSample = "";
-        render();
+        state.selectedJobId = null;
+        state.selectedRow = null;
+        updateCounts();
+        renderTargets();
+        const rows = filteredBestRows();
+        if (!rows.length) {
+          els.targetSelect.innerHTML = "";
+          els.modelSelect.innerHTML = "";
+          syncUrl();
+          return;
+        }
+        state.selectedJobId = targetKey(rows[0]);
+        state.selectedRow = activeRows().find((row) => targetKey(row) === state.selectedJobId) || rows[0];
+        renderTargets();
+        renderModelSelect();
+        loadSelected();
       });
       els.targetSelect.addEventListener("change", () => {
-        state.selectedTarget = els.targetSelect.value;
-        state.selectedSample = "";
-        render();
+        selectTarget(els.targetSelect.value);
       });
-      els.sampleSelect.addEventListener("change", () => {
-        state.selectedSample = els.sampleSelect.value;
-        renderSelectedRow();
+      els.modelSelect.addEventListener("change", selectModel);
+      els.bestOnly.addEventListener("change", () => {
+        const currentTarget = state.selectedRow ? targetSlug(state.selectedRow) : null;
+        renderTargets();
+        if (currentTarget) {
+          const match = activeRows().find((row) => targetSlug(row) === currentTarget);
+          if (match) {
+            state.selectedJobId = targetKey(match);
+            state.selectedRow = selectedTargetRows()[0] || match;
+            renderModelSelect();
+            loadSelected();
+            return;
+          }
+        }
+        applyUrlSelection();
+        renderModelSelect();
+        loadSelected();
+      });
+      els.sticks.addEventListener("change", loadSelected);
+      els.spinToggle.addEventListener("click", () => {
+        state.spinning = !state.spinning;
+        state.viewer.spin(state.spinning);
+        els.spinToggle.textContent = state.spinning ? "Stop Spin" : "Spin";
+      });
+      els.resetView.addEventListener("click", () => {
+        state.viewer.zoomTo();
+        state.viewer.render();
+      });
+      els.openFolder.addEventListener("click", () => els.folderInput.click());
+      els.folderInput.addEventListener("change", async (event) => {
+        loadFolderFiles(event.target.files);
+        setRows(parseCsv(await readTextFile("database.csv")));
       });
 
       init();

@@ -4,7 +4,7 @@ boltz_src = "boltz"
 lmi4boltz_src = "lmi4boltz"
 
 [viewer]
-publish_root = "published"
-web_root = "."
+publish_root = "viewer/published"
+web_root = "viewer"
 host = ""
 ssh_target = ""

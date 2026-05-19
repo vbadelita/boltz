@@ -22,9 +22,9 @@ protein-folding/
 
 1. Prepare experiment-specific inputs and emit Boltz YAMLs plus queue job JSON files.
 2. Run the stateless queue runner on the compute host.
-3. Publish completed run bundles to the viewer host.
+3. Publish completed run bundles into `viewer/published/` or to a viewer host.
 4. Merge published viewer metadata into `viewer/database.csv`.
-5. Serve the static viewer.
+5. Serve the `viewer/` directory as a standalone static site.
 
 ## Commands
 
@@ -41,8 +41,8 @@ python3 scripts/serve_viewer.py --help
 ## Host model
 
 - Compute host: runs `boltz` or `lmi4boltz` and writes experiment run directories.
-- Viewer host: receives published bundles, rebuilds `viewer/database.csv`, and serves
-  the viewer.
+- Viewer host: receives published bundles under `viewer/published/`, rebuilds
+  `viewer/database.csv`, and serves the `viewer/` directory.
 
 ## Runtime layout
 
