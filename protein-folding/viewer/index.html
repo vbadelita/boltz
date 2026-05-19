@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>protein-folding viewer</title>
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f3ef;
+        --panel: #fffdf9;
+        --line: #d8d1c6;
+        --text: #1e252c;
+        --muted: #64707b;
+        --accent: #0b6e4f;
+        --accent-soft: #dff1e8;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        min-height: 100vh;
+      }
+
+      aside, main, footer { min-width: 0; }
+      aside {
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      header, .controls, footer {
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      h1, h2, p { margin: 0; }
+      .controls, .target-list, .detail {
+        display: grid;
+        gap: 10px;
+      }
+
+      label {
+        display: grid;
+        gap: 4px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      select, input, button, a.action {
+        min-height: 38px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        padding: 8px 10px;
+        font: inherit;
+        color: inherit;
+        background: white;
+      }
+
+      button, a.action { cursor: pointer; }
+      a.action {
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+      }
+
+      .target-list {
+        padding: 12px;
+        overflow: auto;
+      }
+
+      .target {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        background: white;
+      }
+
+      .target.active {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .target button {
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        padding: 0;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      main {
+        display: grid;
+        grid-template-rows: auto minmax(360px, 1fr) auto;
+      }
+
+      .detail {
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.92);
+      }
+
+      .viewer {
+        position: relative;
+        background: #faf8f3;
+      }
+
+      #viewer {
+        position: absolute;
+        inset: 0;
+      }
+
+      .loading {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+        background: white;
+      }
+
+      .card span {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .card strong {
+        display: block;
+        margin-top: 4px;
+        overflow-wrap: anywhere;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      @media (max-width: 900px) {
+        .app { grid-template-columns: 1fr; }
+        .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside>
+        <header>
+          <h1>protein-folding</h1>
+          <p id="summary">Loading database</p>
+        </header>
+        <section class="controls">
+          <label>
+            Search
+            <input id="searchInput" type="search" placeholder="Target or experiment" />
+          </label>
+          <label>
+            Experiment
+            <select id="experimentSelect"></select>
+          </label>
+          <label>
+            Target
+            <select id="targetSelect"></select>
+          </label>
+          <label>
+            Sample
+            <select id="sampleSelect"></select>
+          </label>
+        </section>
+        <section id="targetList" class="target-list"></section>
+      </aside>
+
+      <main>
+        <section class="detail">
+          <h2 id="title">Select a result</h2>
+          <p id="subtitle"></p>
+          <div class="actions">
+            <a id="shareLink" class="action" href="#">Copyable Link</a>
+            <a id="structureLink" class="action" href="#" target="_blank" rel="noreferrer">Open CIF</a>
+            <a id="confidenceLink" class="action" href="#" target="_blank" rel="noreferrer">Open confidence JSON</a>
+            <a id="databaseLink" class="action" href="./database.csv" target="_blank" rel="noreferrer">Open database CSV</a>
+          </div>
+        </section>
+
+        <section class="viewer">
+          <div id="viewer"></div>
+          <div id="loading" class="loading">Loading structure</div>
+        </section>
+
+        <footer>
+          <div class="grid">
+            <div class="card"><span>Experiment</span><strong id="metaExperiment">-</strong></div>
+            <div class="card"><span>Target</span><strong id="metaTarget">-</strong></div>
+            <div class="card"><span>Sample</span><strong id="metaSample">-</strong></div>
+            <div class="card"><span>Status</span><strong id="metaStatus">-</strong></div>
+            <div class="card"><span>Assembly</span><strong id="metaAssembly">-</strong></div>
+            <div class="card"><span>Length</span><strong id="metaLength">-</strong></div>
+            <div class="card"><span>pLDDT</span><strong id="metaPlddt">-</strong></div>
+            <div class="card"><span>Confidence</span><strong id="metaConfidence">-</strong></div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      const state = {
+        rows: [],
+        viewer: null,
+        selectedExperiment: "",
+        selectedTarget: "",
+        selectedSample: "",
+      };
+
+      const els = {
+        summary: document.getElementById("summary"),
+        searchInput: document.getElementById("searchInput"),
+        experimentSelect: document.getElementById("experimentSelect"),
+        targetSelect: document.getElementById("targetSelect"),
+        sampleSelect: document.getElementById("sampleSelect"),
+        targetList: document.getElementById("targetList"),
+        title: document.getElementById("title"),
+        subtitle: document.getElementById("subtitle"),
+        shareLink: document.getElementById("shareLink"),
+        structureLink: document.getElementById("structureLink"),
+        confidenceLink: document.getElementById("confidenceLink"),
+        loading: document.getElementById("loading"),
+        metaExperiment: document.getElementById("metaExperiment"),
+        metaTarget: document.getElementById("metaTarget"),
+        metaSample: document.getElementById("metaSample"),
+        metaStatus: document.getElementById("metaStatus"),
+        metaAssembly: document.getElementById("metaAssembly"),
+        metaLength: document.getElementById("metaLength"),
+        metaPlddt: document.getElementById("metaPlddt"),
+        metaConfidence: document.getElementById("metaConfidence"),
+      };
+
+      function normalizeRow(row) {
+        return {
+          ...row,
+          experiment_slug: row.experiment_slug || slugify(row.experiment || ""),
+          target_slug: row.target_slug || slugify(row.target_id || row.target_label || ""),
+          sample_rank: row.sample_rank || "0",
+        };
+      }
+
+      function slugify(value) {
+        return String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "item";
+      }
+
+      function parseCsv(text) {
+        const rows = [];
+        let row = [];
+        let field = "";
+        let quoted = false;
+        for (let i = 0; i < text.length; i += 1) {
+          const char = text[i];
+          const next = text[i + 1];
+          if (quoted) {
+            if (char === '"' && next === '"') {
+              field += '"';
+              i += 1;
+            } else if (char === '"') {
+              quoted = false;
+            } else {
+              field += char;
+            }
+          } else if (char === '"') {
+            quoted = true;
+          } else if (char === ",") {
+            row.push(field);
+            field = "";
+          } else if (char === "\n") {
+            row.push(field);
+            rows.push(row);
+            row = [];
+            field = "";
+          } else if (char !== "\r") {
+            field += char;
+          }
+        }
+        if (field || row.length) {
+          row.push(field);
+          rows.push(row);
+        }
+        const header = rows.shift() || [];
+        return rows
+          .filter((values) => values.length === header.length)
+          .map((values) => Object.fromEntries(header.map((key, index) => [key, values[index]])));
+      }
+
+      async function loadRows() {
+        const response = await fetch(`./database.csv?t=${Date.now()}`);
+        state.rows = parseCsv(await response.text()).map(normalizeRow);
+      }
+
+      function uniqueBy(items, getter) {
+        const seen = new Set();
+        return items.filter((item) => {
+          const key = getter(item);
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+
+      function experimentRows() {
+        const rows = state.selectedExperiment
+          ? state.rows.filter((row) => row.experiment_slug === state.selectedExperiment)
+          : state.rows;
+        const query = els.searchInput.value.trim().toLowerCase();
+        if (!query) return rows;
+        return rows.filter((row) =>
+          [row.experiment, row.target_label, row.target_id, row.target_slug]
+            .join(" ")
+            .toLowerCase()
+            .includes(query),
+        );
+      }
+
+      function targetRows() {
+        return state.selectedTarget
+          ? experimentRows().filter((row) => row.target_slug === state.selectedTarget)
+          : experimentRows();
+      }
+
+      function selectedRow() {
+        return targetRows().find((row) => row.sample_rank === state.selectedSample) || null;
+      }
+
+      function updateSummary() {
+        const targetCount = uniqueBy(state.rows, (row) => `${row.experiment_slug}:${row.target_slug}`).length;
+        els.summary.textContent = `${state.rows.length} samples across ${targetCount} targets`;
+      }
+
+      function renderExperimentSelect() {
+        const experiments = uniqueBy(state.rows, (row) => row.experiment_slug)
+          .sort((a, b) => a.experiment.localeCompare(b.experiment));
+        els.experimentSelect.innerHTML = "";
+        const all = document.createElement("option");
+        all.value = "";
+        all.textContent = "All experiments";
+        els.experimentSelect.appendChild(all);
+        experiments.forEach((row) => {
+          const option = document.createElement("option");
+          option.value = row.experiment_slug;
+          option.textContent = row.experiment;
+          els.experimentSelect.appendChild(option);
+        });
+        els.experimentSelect.value = state.selectedExperiment;
+      }
+
+      function renderTargetList() {
+        const rows = uniqueBy(experimentRows(), (row) => row.target_slug);
+        els.targetList.innerHTML = "";
+        rows.forEach((row) => {
+          const item = document.createElement("div");
+          item.className = `target ${row.target_slug === state.selectedTarget ? "active" : ""}`;
+          item.innerHTML = `
+            <button type="button">
+              <strong>${row.target_label}</strong>
+              <div class="meta">
+                <span>${row.experiment}</span>
+                <span>${row.assembly || "-"}</span>
+                <span>${row.length || "-"} aa</span>
+              </div>
+            </button>
+          `;
+          item.querySelector("button").addEventListener("click", () => {
+            state.selectedExperiment = row.experiment_slug;
+            state.selectedTarget = row.target_slug;
+            const rowsForTarget = targetRows();
+            state.selectedSample = rowsForTarget[0]?.sample_rank || "";
+            render();
+          });
+          els.targetList.appendChild(item);
+        });
+      }
+
+      function renderTargetSelect() {
+        const rows = uniqueBy(experimentRows(), (row) => row.target_slug);
+        els.targetSelect.innerHTML = "";
+        rows.forEach((row) => {
+          const option = document.createElement("option");
+          option.value = row.target_slug;
+          option.textContent = row.target_label;
+          els.targetSelect.appendChild(option);
+        });
+        if (!state.selectedTarget && rows.length) {
+          state.selectedTarget = rows[0].target_slug;
+        }
+        els.targetSelect.value = state.selectedTarget;
+      }
+
+      function renderSampleSelect() {
+        const rows = targetRows().sort((a, b) => Number(a.sample_rank) - Number(b.sample_rank));
+        els.sampleSelect.innerHTML = "";
+        rows.forEach((row) => {
+          const option = document.createElement("option");
+          option.value = row.sample_rank;
+          option.textContent = `sample ${row.sample_rank}`;
+          els.sampleSelect.appendChild(option);
+        });
+        if (!state.selectedSample && rows.length) {
+          state.selectedSample = rows[0].sample_rank;
+        }
+        els.sampleSelect.value = state.selectedSample;
+      }
+
+      function updateUrl() {
+        const params = new URLSearchParams();
+        if (state.selectedExperiment) params.set("e", state.selectedExperiment);
+        if (state.selectedTarget) params.set("t", state.selectedTarget);
+        if (state.selectedSample) params.set("s", state.selectedSample);
+        const url = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+        window.history.replaceState({}, "", url);
+        els.shareLink.href = url;
+        els.shareLink.textContent = `${window.location.origin}${url}`;
+      }
+
+      function resolveAssetPath(path) {
+        const normalized = String(path || "").replace(/^\.?\//, "");
+        return normalized.startsWith("/") ? normalized : `../${normalized}`;
+      }
+
+      function colorByPlddt(atom) {
+        const b = atom.b ?? 0;
+        if (b >= 90) return "#0053d6";
+        if (b >= 70) return "#65cbf3";
+        if (b >= 50) return "#ffdb4d";
+        return "#ff7d45";
+      }
+
+      async function renderSelectedRow() {
+        const row = selectedRow();
+        if (!row) {
+          els.title.textContent = "No matching result";
+          els.subtitle.textContent = "";
+          return;
+        }
+
+        updateUrl();
+        els.loading.style.display = "grid";
+        els.title.textContent = row.target_label;
+        els.subtitle.textContent = `${row.experiment} / ${row.assembly || "-"} / sample ${row.sample_rank}`;
+        els.structureLink.href = resolveAssetPath(row.structure_path);
+        els.confidenceLink.href = resolveAssetPath(row.confidence_json);
+        els.metaExperiment.textContent = row.experiment;
+        els.metaTarget.textContent = row.target_id;
+        els.metaSample.textContent = row.sample_rank;
+        els.metaStatus.textContent = row.status;
+        els.metaAssembly.textContent = row.assembly || "-";
+        els.metaLength.textContent = row.length || "-";
+        els.metaPlddt.textContent = row.complex_plddt || "-";
+        els.metaConfidence.textContent = row.confidence_score || "-";
+
+        const response = await fetch(resolveAssetPath(row.structure_path));
+        const cif = await response.text();
+        state.viewer.clear();
+        state.viewer.addModel(cif, "mmcif");
+        state.viewer.setStyle({}, { cartoon: { colorfunc: colorByPlddt } });
+        state.viewer.zoomTo();
+        state.viewer.render();
+        els.loading.style.display = "none";
+      }
+
+      function syncStateFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        state.selectedExperiment = params.get("e") || state.selectedExperiment;
+        state.selectedTarget = params.get("t") || state.selectedTarget;
+        state.selectedSample = params.get("s") || state.selectedSample;
+      }
+
+      function render() {
+        syncStateFromUrl();
+        renderExperimentSelect();
+        renderTargetSelect();
+        renderSampleSelect();
+        renderTargetList();
+        updateSummary();
+        renderSelectedRow();
+      }
+
+      async function init() {
+        state.viewer = $3Dmol.createViewer("viewer", { backgroundColor: "#faf8f3" });
+        await loadRows();
+        syncStateFromUrl();
+        render();
+      }
+
+      els.searchInput.addEventListener("input", () => render());
+      els.experimentSelect.addEventListener("change", () => {
+        state.selectedExperiment = els.experimentSelect.value;
+        state.selectedTarget = "";
+        state.selectedSample = "";
+        render();
+      });
+      els.targetSelect.addEventListener("change", () => {
+        state.selectedTarget = els.targetSelect.value;
+        state.selectedSample = "";
+        render();
+      });
+      els.sampleSelect.addEventListener("change", () => {
+        state.selectedSample = els.sampleSelect.value;
+        renderSelectedRow();
+      });
+
+      init();
+    </script>
+  </body>
+</html>

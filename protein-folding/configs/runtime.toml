@@ -1,0 +1,17 @@
+[defaults]
+program = "boltz"
+model = "boltz2"
+accelerator = "gpu"
+sampling_steps = 40
+diffusion_samples = 1
+max_parallel_samples = 1
+recycling_steps = 3
+use_msa_server = true
+
+[lmi4boltz]
+chunk_size_transition_z = 32
+chunk_size_transition_msa = 16
+chunk_size_outer_product = 1
+chunk_size_tri_attn = 64
+triangle_mult_gate_nchunks = 4
+chunk_size_threshold = 1
