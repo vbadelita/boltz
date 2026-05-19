@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Test EVE Multimer Viewer</title>
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f7f4;
+        --panel: #ffffff;
+        --text: #1d2329;
+        --muted: #68737d;
+        --line: #d8ddd8;
+        --accent: #006d77;
+        --accent-soft: #e4f3f3;
+        --danger: #b84a32;
+        --shadow: 0 18px 45px rgba(30, 38, 44, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      aside {
+        border-right: 1px solid var(--line);
+        background: var(--panel);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        padding: 18px 18px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 19px;
+        line-height: 1.2;
+        font-weight: 720;
+        letter-spacing: 0;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .metric {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 9px 10px;
+        min-width: 0;
+      }
+
+      .metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.1;
+        white-space: nowrap;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 18px;
+        line-height: 1.1;
+      }
+
+      .controls {
+        padding: 14px 18px 12px;
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        gap: 11px;
+      }
+
+      label {
+        display: grid;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 680;
+        color: var(--muted);
+      }
+
+      select,
+      input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--text);
+        font: inherit;
+        font-size: 13px;
+        padding: 9px 10px;
+        min-height: 38px;
+      }
+
+      .toggles {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        color: var(--text);
+        min-height: 38px;
+      }
+
+      .toggle input {
+        width: 16px;
+        min-height: 16px;
+        margin: 0;
+      }
+
+      .target-list {
+        overflow: auto;
+        flex: 1;
+        padding: 10px;
+      }
+
+      .target {
+        width: 100%;
+        border: 1px solid transparent;
+        background: transparent;
+        border-radius: 8px;
+        text-align: left;
+        padding: 10px;
+        display: grid;
+        gap: 6px;
+        cursor: pointer;
+        color: inherit;
+      }
+
+      .target:hover,
+      .target.active {
+        background: var(--accent-soft);
+        border-color: #b7dbdc;
+      }
+
+      .target-title {
+        font-size: 13px;
+        line-height: 1.25;
+        font-weight: 680;
+        overflow-wrap: anywhere;
+      }
+
+      .target-meta {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 2px 7px;
+        background: #edf0ed;
+        color: #475059;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .badge.folded {
+        background: #dceefc;
+        color: #135c92;
+      }
+
+      .badge.low {
+        background: #fff0c2;
+        color: #796118;
+      }
+
+      .badge.failed {
+        background: #fde5dc;
+        color: var(--danger);
+      }
+
+      main {
+        min-width: 0;
+        display: grid;
+        grid-template-rows: auto minmax(420px, 1fr) auto;
+        min-height: 100vh;
+      }
+
+      .viewer-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.76);
+      }
+
+      .viewer-title {
+        min-width: 0;
+      }
+
+      .viewer-title h2 {
+        margin: 0;
+        font-size: 17px;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+      }
+
+      .viewer-title p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      button.action {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--text);
+        border-radius: 8px;
+        min-height: 38px;
+        padding: 8px 11px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      button.action.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .stage {
+        position: relative;
+        min-height: 420px;
+        background: #fbfbf8;
+      }
+
+      #viewer {
+        position: absolute;
+        inset: 0;
+      }
+
+      .empty,
+      .loading {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 14px;
+        pointer-events: none;
+      }
+
+      .legend {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        width: min(320px, calc(100% - 36px));
+        padding: 11px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: var(--shadow);
+      }
+
+      .scale {
+        height: 12px;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
+          #ff7d45 0%,
+          #ffdb4d 50%,
+          #65cbf3 70%,
+          #0053d6 90%,
+          #0053d6 100%
+        );
+      }
+
+      .scale-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        background: var(--panel);
+        padding: 12px 18px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .selected-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .selected-grid div {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 9px;
+        min-width: 0;
+      }
+
+      .selected-grid span {
+        color: var(--muted);
+        font-size: 11px;
+        display: block;
+      }
+
+      .selected-grid strong {
+        display: block;
+        font-size: 13px;
+        margin-top: 3px;
+        overflow-wrap: anywhere;
+      }
+
+      .output-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .output-links a {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 7px 10px;
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 680;
+      }
+
+      @media (max-width: 860px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+
+        aside {
+          min-height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .target-list {
+          max-height: 310px;
+        }
+
+        .viewer-head {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .selected-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside>
+        <header>
+          <h1>Test EVE Multimers</h1>
+          <div class="metrics">
+            <div class="metric"><span>Targets</span><strong id="targetCount">0</strong></div>
+            <div class="metric"><span>Structures</span><strong id="modelCount">0</strong></div>
+            <div class="metric"><span>Folded</span><strong id="foldedCount">0</strong></div>
+          </div>
+        </header>
+
+        <section class="controls">
+          <label>
+            Search
+            <input id="search" type="search" placeholder="Target name" />
+          </label>
+          <label>
+            Target
+            <select id="targetSelect"></select>
+          </label>
+          <label>
+            Config
+            <select id="modelSelect"></select>
+          </label>
+          <div class="toggles">
+            <label class="toggle">
+              <input id="bestOnly" type="checkbox" />
+              Best only
+            </label>
+            <label class="toggle">
+              <input id="sticks" type="checkbox" />
+              Side chains
+            </label>
+          </div>
+        </section>
+
+        <section id="targetList" class="target-list"></section>
+      </aside>
+
+      <main>
+        <section class="viewer-head">
+          <div class="viewer-title">
+            <h2 id="selectedTitle">Loading structures</h2>
+            <p id="selectedSubtitle"></p>
+          </div>
+          <div class="actions">
+            <button id="openFolder" class="action">Open Folder</button>
+            <button id="spinToggle" class="action">Spin</button>
+            <button id="resetView" class="action primary">Reset View</button>
+          </div>
+        </section>
+
+        <section class="stage">
+          <div id="viewer"></div>
+          <div id="loading" class="loading">Loading</div>
+          <div class="legend">
+            <div class="scale"></div>
+            <div class="scale-labels">
+              <span>&lt;50</span>
+              <span>50</span>
+              <span>70</span>
+              <span>90+</span>
+            </div>
+          </div>
+        </section>
+
+        <footer>
+          <div class="selected-grid">
+            <div><span>Config</span><strong id="metaCondition">-</strong></div>
+            <div><span>Rank</span><strong id="metaRank">-</strong></div>
+            <div><span>pLDDT</span><strong id="metaPlddt">-</strong></div>
+            <div><span>pTM</span><strong id="metaPtm">-</strong></div>
+            <div><span>ipTM</span><strong id="metaIptm">-</strong></div>
+            <div><span>Confidence</span><strong id="metaConfidence">-</strong></div>
+            <div><span>Total residues</span><strong id="metaLength">-</strong></div>
+            <div><span>Stoichiometry</span><strong id="metaMsaDepth">-</strong></div>
+            <div><span>MSA raw</span><strong id="metaMsaRawDepth">-</strong></div>
+            <div><span>Sampling</span><strong id="metaSampling">-</strong></div>
+            <div><span>Diffusion</span><strong id="metaDiffusion">-</strong></div>
+            <div><span>Parallel</span><strong id="metaParallel">-</strong></div>
+            <div><span>Recycling</span><strong id="metaRecycling">-</strong></div>
+            <div><span>ipLDDT</span><strong id="metaIplddt">-</strong></div>
+            <div><span>PDE</span><strong id="metaPde">-</strong></div>
+            <div><span>ipDE</span><strong id="metaIpde">-</strong></div>
+            <div><span>Status</span><strong id="metaStatus">-</strong></div>
+            <div><span>Job ID</span><strong id="metaJob">-</strong></div>
+          </div>
+          <div class="output-links">
+            <a id="structureLink" href="#" target="_blank" rel="noreferrer">Open CIF</a>
+            <a id="confidenceLink" href="#" target="_blank" rel="noreferrer">Open confidence JSON</a>
+            <a id="metadataLink" href="metadata.csv" target="_blank" rel="noreferrer">Open metadata CSV</a>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <input
+      id="folderInput"
+      type="file"
+      webkitdirectory
+      directory
+      multiple
+      hidden
+    />
+
+    <script>
+      const metadataUrl = "metadata.csv";
+      const isFileProtocol = window.location.protocol === "file:";
+      const state = {
+        rows: [],
+        bestRows: [],
+        filteredRows: [],
+        selectedJobId: null,
+        selectedRow: null,
+        viewer: null,
+        spinning: false,
+        fileMap: new Map(),
+      };
+
+      const els = {
+        targetList: document.getElementById("targetList"),
+        search: document.getElementById("search"),
+        targetSelect: document.getElementById("targetSelect"),
+        modelSelect: document.getElementById("modelSelect"),
+        bestOnly: document.getElementById("bestOnly"),
+        sticks: document.getElementById("sticks"),
+        selectedTitle: document.getElementById("selectedTitle"),
+        selectedSubtitle: document.getElementById("selectedSubtitle"),
+        loading: document.getElementById("loading"),
+        openFolder: document.getElementById("openFolder"),
+        folderInput: document.getElementById("folderInput"),
+        spinToggle: document.getElementById("spinToggle"),
+        resetView: document.getElementById("resetView"),
+        targetCount: document.getElementById("targetCount"),
+        modelCount: document.getElementById("modelCount"),
+        foldedCount: document.getElementById("foldedCount"),
+        metaCondition: document.getElementById("metaCondition"),
+        metaRank: document.getElementById("metaRank"),
+        metaPlddt: document.getElementById("metaPlddt"),
+        metaPtm: document.getElementById("metaPtm"),
+        metaIptm: document.getElementById("metaIptm"),
+        metaConfidence: document.getElementById("metaConfidence"),
+        metaLength: document.getElementById("metaLength"),
+        metaMsaDepth: document.getElementById("metaMsaDepth"),
+        metaMsaRawDepth: document.getElementById("metaMsaRawDepth"),
+        metaSampling: document.getElementById("metaSampling"),
+        metaDiffusion: document.getElementById("metaDiffusion"),
+        metaParallel: document.getElementById("metaParallel"),
+        metaRecycling: document.getElementById("metaRecycling"),
+        metaIplddt: document.getElementById("metaIplddt"),
+        metaPde: document.getElementById("metaPde"),
+        metaIpde: document.getElementById("metaIpde"),
+        metaStatus: document.getElementById("metaStatus"),
+        metaJob: document.getElementById("metaJob"),
+        structureLink: document.getElementById("structureLink"),
+        confidenceLink: document.getElementById("confidenceLink"),
+        metadataLink: document.getElementById("metadataLink"),
+      };
+
+      function parseCsv(text) {
+        const rows = [];
+        let row = [];
+        let field = "";
+        let quoted = false;
+        for (let i = 0; i < text.length; i += 1) {
+          const char = text[i];
+          const next = text[i + 1];
+          if (quoted) {
+            if (char === '"' && next === '"') {
+              field += '"';
+              i += 1;
+            } else if (char === '"') {
+              quoted = false;
+            } else {
+              field += char;
+            }
+          } else if (char === '"') {
+            quoted = true;
+          } else if (char === ",") {
+            row.push(field);
+            field = "";
+          } else if (char === "\n") {
+            row.push(field);
+            rows.push(row);
+            row = [];
+            field = "";
+          } else if (char !== "\r") {
+            field += char;
+          }
+        }
+        if (field || row.length) {
+          row.push(field);
+          rows.push(row);
+        }
+        const header = rows.shift();
+        return rows
+          .filter((values) => values.length === header.length)
+          .map((values) =>
+            Object.fromEntries(header.map((key, index) => [key, values[index]])),
+          );
+      }
+
+      function numeric(row, key) {
+        const value = Number.parseFloat(row[key]);
+        return Number.isFinite(value) ? value : null;
+      }
+
+      function quality(row) {
+        const plddt = numeric(row, "complex_plddt");
+        if (plddt === null) return "failed";
+        if (plddt >= 0.7) return "folded";
+        if (plddt >= 0.5) return "low";
+        return "failed";
+      }
+
+      function bestByTarget(rows) {
+        const best = new Map();
+        rows.forEach((row) => {
+          if (row.status !== "ok") return;
+          const current = best.get(row.job_id);
+          if (!current || numeric(row, "complex_plddt") > numeric(current, "complex_plddt")) {
+            best.set(row.job_id, row);
+          }
+        });
+        return Array.from(best.values()).sort(
+          (a, b) => Number(a.record_index) - Number(b.record_index),
+        );
+      }
+
+      function formatScore(value) {
+        return value === null ? "-" : value.toFixed(3);
+      }
+
+      function structureUrl(row) {
+        return row.structure_path;
+      }
+
+      function normalizeRelativePath(path) {
+        return path.replaceAll("\\", "/").replace(/^\.\//, "");
+      }
+
+      function resolveProjectPath(path) {
+        const normalized = normalizeRelativePath(path);
+        if (!isFileProtocol && normalized.startsWith("test_eve_experiments/")) {
+          return `/${normalized}`;
+        }
+        if (normalized.startsWith("test_eve_experiments/multimers/")) {
+          return normalized.slice("test_eve_experiments/multimers/".length);
+        }
+        return normalized;
+      }
+
+      function setRows(rows) {
+        state.rows = rows
+          .filter((row) => row.status === "ok")
+          .sort((a, b) => {
+            const target = Number(a.record_index) - Number(b.record_index);
+            if (target !== 0) return target;
+            const byPlddt = numeric(b, "complex_plddt") - numeric(a, "complex_plddt");
+            if (byPlddt !== 0) return byPlddt;
+            return Number(a.sample_rank) - Number(b.sample_rank);
+          });
+        state.bestRows = bestByTarget(state.rows);
+        updateCounts();
+        renderTargets();
+        if (state.bestRows.length) {
+          selectTarget(state.bestRows[0].job_id);
+        }
+      }
+
+      async function readTextFile(path) {
+        const resolvedPath = resolveProjectPath(path);
+        if (!isFileProtocol) {
+          const response = await fetch(`${encodeURI(resolvedPath)}?t=${Date.now()}`);
+          if (!response.ok) {
+            throw new Error(`Could not load ${path}`);
+          }
+          return response.text();
+        }
+        const file = state.fileMap.get(resolvedPath);
+        if (!file) {
+          throw new Error(`Missing local file: ${path}`);
+        }
+        return file.text();
+      }
+
+      function fileHref(path) {
+        const resolvedPath = resolveProjectPath(path);
+        if (!isFileProtocol) {
+          return resolvedPath;
+        }
+        const file = state.fileMap.get(resolvedPath);
+        return file ? URL.createObjectURL(file) : "#";
+      }
+
+      function loadFolderFiles(files) {
+        state.fileMap = new Map();
+        Array.from(files).forEach((file) => {
+          const relativePath = normalizeRelativePath(file.webkitRelativePath || file.name);
+          const parts = relativePath.split("/");
+          const trimmed =
+            parts.length > 1 && parts[0] === "test_eve_experiments"
+              ? parts.slice(1).join("/")
+              : relativePath;
+          state.fileMap.set(trimmed, file);
+        });
+      }
+
+      function plddtColor(atom) {
+        const b = atom.b ?? 0;
+        if (b >= 90) return "#0053d6";
+        if (b >= 70) return "#65cbf3";
+        if (b >= 50) return "#ffdb4d";
+        return "#ff7d45";
+      }
+
+      function activeRows() {
+        return els.bestOnly.checked
+          ? state.bestRows
+          : state.rows.filter((row) => row.status === "ok");
+      }
+
+      function renderTargets() {
+        const query = els.search.value.trim().toLowerCase();
+        const rows = state.bestRows.filter((row) => {
+          return !query || row.fasta_header.toLowerCase().includes(query);
+        });
+        els.targetList.innerHTML = "";
+        rows.forEach((row) => {
+          const button = document.createElement("button");
+          button.className = `target ${row.job_id === state.selectedJobId ? "active" : ""}`;
+          button.type = "button";
+          const q = quality(row);
+          button.innerHTML = `
+            <span class="target-title">${escapeHtml(row.record_index)}. ${escapeHtml(row.fasta_header)}</span>
+            <span class="target-meta">
+              <span class="badge ${q}">${q}</span>
+              <span>${escapeHtml(row.stoichiometry)}-mer</span>
+              <span>${escapeHtml(row.total_residues)} residues</span>
+              <span>pLDDT ${formatScore(numeric(row, "complex_plddt"))}</span>
+            </span>
+          `;
+          button.addEventListener("click", () => selectTarget(row.job_id));
+          els.targetList.appendChild(button);
+        });
+        renderTargetSelect(rows);
+      }
+
+      function renderTargetSelect(rows = state.bestRows) {
+        const current = els.targetSelect.value || state.selectedJobId;
+        els.targetSelect.innerHTML = "";
+        rows.forEach((row) => {
+          const option = document.createElement("option");
+          option.value = row.job_id;
+          option.textContent = `${row.record_index}. ${row.fasta_header}`;
+          els.targetSelect.appendChild(option);
+        });
+        if (current && rows.some((row) => row.job_id === current)) {
+          els.targetSelect.value = current;
+        }
+      }
+
+      function renderModelSelect() {
+        const rows = activeRows().filter((row) => row.job_id === state.selectedJobId);
+        els.modelSelect.innerHTML = "";
+        rows.forEach((row, index) => {
+          const option = document.createElement("option");
+          option.value = `${row.config}|${row.sample_rank}`;
+          option.textContent = `${configLabel(row)} / sample ${row.sample_rank} / pLDDT ${formatScore(
+            numeric(row, "complex_plddt"),
+          )}`;
+          els.modelSelect.appendChild(option);
+          if (
+            state.selectedRow &&
+            state.selectedRow.config === row.config &&
+            state.selectedRow.sample_rank === row.sample_rank
+          ) {
+            els.modelSelect.selectedIndex = index;
+          }
+        });
+        if (rows.length && (!state.selectedRow || state.selectedRow.job_id !== state.selectedJobId)) {
+          state.selectedRow = rows[0];
+        }
+      }
+
+      function selectTarget(jobId) {
+        state.selectedJobId = jobId;
+        els.targetSelect.value = jobId;
+        const rows = activeRows().filter((row) => row.job_id === jobId);
+        state.selectedRow = rows[0] || null;
+        renderTargets();
+        renderModelSelect();
+        loadSelected();
+      }
+
+      function selectModel() {
+        const [config, rank] = els.modelSelect.value.split("|");
+        state.selectedRow =
+          activeRows().find(
+            (row) =>
+              row.job_id === state.selectedJobId &&
+              row.config === config &&
+              row.sample_rank === rank,
+          ) || state.selectedRow;
+        loadSelected();
+      }
+
+      async function loadSelected() {
+        const row = state.selectedRow;
+        if (!row) return;
+        els.loading.style.display = "grid";
+        els.selectedTitle.textContent = row.fasta_header;
+        els.selectedSubtitle.textContent = `${row.kind} ${row.stoichiometry}-mer, ${row.total_residues} total residues`;
+        els.metaCondition.textContent = configLabel(row);
+        els.metaRank.textContent = row.sample_rank;
+        els.metaPlddt.textContent = formatScore(numeric(row, "complex_plddt"));
+        els.metaPtm.textContent = formatScore(numeric(row, "ptm"));
+        els.metaIptm.textContent = formatScore(numeric(row, "iptm"));
+        els.metaConfidence.textContent = formatScore(numeric(row, "confidence_score"));
+        els.metaLength.textContent = row.total_residues;
+        els.metaMsaDepth.textContent = `${row.stoichiometry}-mer`;
+        els.metaMsaRawDepth.textContent = row.msa_raw_depth || "-";
+        els.metaSampling.textContent = row.sampling_steps;
+        els.metaDiffusion.textContent = row.diffusion_samples;
+        els.metaParallel.textContent = row.max_parallel_samples;
+        els.metaRecycling.textContent = row.recycling_steps;
+        els.metaIplddt.textContent = formatScore(numeric(row, "complex_iplddt"));
+        els.metaPde.textContent = formatScore(numeric(row, "complex_pde"));
+        els.metaIpde.textContent = formatScore(numeric(row, "complex_ipde"));
+        els.metaStatus.textContent = quality(row);
+        els.metaJob.textContent = row.job_id;
+        els.structureLink.href = fileHref(row.structure_path);
+        els.confidenceLink.href = fileHref(row.confidence_json);
+
+        const cif = await readTextFile(structureUrl(row));
+        state.viewer.clear();
+        state.viewer.addModel(cif, "mmcif");
+        state.viewer.setStyle({}, { cartoon: { colorfunc: plddtColor } });
+        if (els.sticks.checked) {
+          state.viewer.addStyle({}, { stick: { radius: 0.08, colorfunc: plddtColor } });
+        }
+        state.viewer.zoomTo();
+        state.viewer.render();
+        state.viewer.spin(state.spinning);
+        els.loading.style.display = "none";
+      }
+
+      function updateCounts() {
+        const targetCount = new Set(state.rows.map((row) => row.job_id)).size;
+        els.targetCount.textContent = String(targetCount);
+        els.modelCount.textContent = String(state.rows.filter((row) => row.status === "ok").length);
+        els.foldedCount.textContent = String(
+          state.bestRows.filter((row) => quality(row) === "folded").length,
+        );
+      }
+
+      function configLabel(row) {
+        return `${row.config} (s${row.sampling_steps}, n${row.diffusion_samples}, p${row.max_parallel_samples}, r${row.recycling_steps})`;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      async function init() {
+        state.viewer = $3Dmol.createViewer("viewer", { backgroundColor: "#fbfbf8" });
+        els.openFolder.style.display = isFileProtocol ? "inline-flex" : "none";
+        if (isFileProtocol) {
+          els.selectedTitle.textContent = "Open test_eve_experiments";
+          els.selectedSubtitle.textContent =
+            "Choose this folder so the browser can read metadata and structure files.";
+          els.loading.style.display = "none";
+          return;
+        }
+        setRows(parseCsv(await readTextFile(metadataUrl)));
+      }
+
+      els.search.addEventListener("input", renderTargets);
+      els.targetSelect.addEventListener("change", () => selectTarget(els.targetSelect.value));
+      els.modelSelect.addEventListener("change", selectModel);
+      els.bestOnly.addEventListener("change", () => {
+        renderModelSelect();
+        const rows = activeRows().filter((row) => row.job_id === state.selectedJobId);
+        state.selectedRow = rows[0] || null;
+        loadSelected();
+      });
+      els.sticks.addEventListener("change", loadSelected);
+      els.openFolder.addEventListener("click", () => {
+        els.folderInput.click();
+      });
+      els.folderInput.addEventListener("change", async (event) => {
+        try {
+          const files = event.target.files;
+          if (!files || !files.length) return;
+          loadFolderFiles(files);
+          els.metadataLink.href = fileHref(metadataUrl);
+          setRows(parseCsv(await readTextFile(metadataUrl)));
+        } catch (error) {
+          els.selectedTitle.textContent = "Could not load viewer";
+          els.selectedSubtitle.textContent = error.message;
+          els.loading.style.display = "none";
+        }
+      });
+      els.resetView.addEventListener("click", () => {
+        state.viewer.zoomTo();
+        state.viewer.render();
+      });
+      els.spinToggle.addEventListener("click", () => {
+        state.spinning = !state.spinning;
+        state.viewer.spin(state.spinning);
+        els.spinToggle.classList.toggle("primary", state.spinning);
+      });
+      window.addEventListener("resize", () => {
+        state.viewer.resize();
+        state.viewer.render();
+      });
+
+      init().catch((error) => {
+        els.selectedTitle.textContent = "Could not load viewer";
+        els.selectedSubtitle.textContent = error.message;
+        els.loading.style.display = "none";
+      });
+    </script>
+  </body>
+</html>

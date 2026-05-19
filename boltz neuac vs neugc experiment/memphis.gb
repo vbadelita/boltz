@@ -1,0 +1,98 @@
+LOCUS       CY010908                1750 bp ss-RNA     linear   VRL 16-JUN-2006
+DEFINITION  Influenza A virus (A/Memphis/7/1980(H1N1)) segment 4, complete
+            sequence.
+ACCESSION   CY010908
+VERSION     CY010908.1
+KEYWORDS    .
+SOURCE      Influenza A virus (A/Memphis/7/1980(H1N1))
+  ORGANISM  Influenza A virus (A/Memphis/7/1980(H1N1))
+            Viruses; Riboviria; Orthornavirae; Negarnaviricota;
+            Polyploviricotina; Insthoviricetes; Articulavirales;
+            Orthomyxoviridae; Alphainfluenzavirus; Alphainfluenzavirus
+            influenzae.
+REFERENCE   1  (bases 1 to 1750)
+  AUTHORS   Ghedin,E., Spiro,D., Miller,N., Zaborsky,J., Feldblyum,T.,
+            Subbu,V., Shumway,M., Sparenborg,J., Groveman,L., Halpin,R.,
+            Sitz,J., Koo,H., Salzberg,S.L., Webster,R.G., Hoffmann,E.,
+            Krauss,S., Naeve,C., Bao,Y., Bolotov,P., Dernovoy,D., Kiryutin,B.,
+            Lipman,D.J. and Tatusova,T.
+  TITLE     The NIAID Influenza Genome Sequencing Project
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 1750)
+  CONSRTM   The NIAID Influenza Genome Sequencing Consortium
+  TITLE     Direct Submission
+  JOURNAL   Submitted (16-JUN-2006) on behalf of TIGR/St. Jude Children's
+            Research Hospital/NCBI, National Center for Biotechnology
+            Information, NIH, Bethesda, MD 20894, USA
+FEATURES             Location/Qualifiers
+     source          1..1750
+                     /organism="Influenza A virus (A/Memphis/7/1980(H1N1))"
+                     /mol_type="genomic RNA"
+                     /strain="A/Memphis/7/1980"
+                     /serotype="H1N1"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:378138"
+                     /segment="4"
+                     /lab_host="P3 passage(s)"
+                     /geo_loc_name="USA: Memphis, TN"
+                     /collection_date="1980"
+     gene            20..1720
+                     /gene="HA"
+     CDS             20..1720
+                     /gene="HA"
+                     /function="receptor binding and fusion protein"
+                     /codon_start=1
+                     /product="hemagglutinin"
+                     /protein_id="ABF47748.1"
+                     /translation="MKAKLLVLLCALSATDADTICIGYHANNSTDTVDTVLEKNVTVT
+                     HSVNLLEDSHNGKLCRLKGIAPLQLGKCSIAGWILGNPECESLFSKKSWSYIAETPNS
+                     ENGTCYPGYFADYEELREQLSSVSSFERFEIFPKESSWPKHNVTRGVTASCSHKGKSS
+                     FYRNLLWLTEKNGSYPNLSKSYVNNKEKEVLVLWGVHHPSNIEDQKTIYRKENAYVSV
+                     VSSHYNRRFTPEIAKRPKVRDQEGRINYYWTLLEPGDTIIFEANGNLIAPWYAFALSR
+                     GFGSGIITSNASMDECDAKCQTPQGAINSSLPFQNVHPVTIGECPKYVRSTKLRMVTG
+                     LRNIPSIQSRGLFGAIAGFIEGGWTGMIDGWYGYHHQNEQGSGYAADQKSTQNAINGI
+                     TNKVNSVIEKMNTQFTAVGKEFNKLEKRMENLNKKVDDGFLDIWTYNAELLVLLENER
+                     TLDFHDSNVKNLYEKVKSQLKNNAKEIGNGCFEFYHKCNNECMESVKNGTYDYPKYSE
+                     ESKLNREKIDGVKLESMGVYQILAIYSTVASSLVLLVSLGAISFWMCSNGSLQCRICI
+                     "
+     sig_peptide     20..70
+                     /gene="HA"
+     mat_peptide     71..1051
+                     /gene="HA"
+                     /product="HA1"
+     mat_peptide     1052..1717
+                     /gene="HA"
+                     /product="HA2"
+ORIGIN      
+        1 gaaaataaaa acaaccaaaa tgaaagcaaa actgctggtc ctgttatgtg cactttcagc
+       61 tacagatgca gacacaatat gtataggcta ccatgcgaac aactcaaccg acactgttga
+      121 cacagtactc gaaaagaacg tgacagtgac acactctgtc aacctacttg aggacagtca
+      181 caacggaaaa ctatgcagac taaaaggaat agccccacta caattgggga aatgcagcat
+      241 tgccggatgg atcttaggaa acccagaatg cgaatcactg ttttctaaga aatcatggtc
+      301 ctacattgca gaaacaccaa actccgagaa tggaacatgt tacccagggt atttcgccga
+      361 ctatgaggaa ctgagggagc aattgagttc agtatcatca ttcgagagat tcgaaatatt
+      421 ccccaaggaa agttcatggc ccaaacacaa cgtaaccaga ggagtaacgg catcatgctc
+      481 ccataagggg aaaagcagtt tttacagaaa tttgctatgg ctgacggaga aaaatggctc
+      541 gtacccaaat ctgagcaagt cctatgtgaa caacaaagag aaagaagtcc ttgtactatg
+      601 gggtgttcat cacccgtcta acatagagga ccaaaagacc atctatcgta aagaaaatgc
+      661 ttatgtctct gtagtgtctt cacattataa caggagattc accccagaaa tagcaaaaag
+      721 acccaaagta agagatcaag aagggagaat taactactac tggactctgc tggaacccgg
+      781 ggacacaata atatttgagg caaatggaaa tctaatagcg ccatggtatg ctttcgcact
+      841 gagtagaggc tttgggtcag gaatcatcac ctcaaacgca tcgatggatg aatgtgacgc
+      901 gaagtgtcaa acaccccagg gagctataaa cagtagtctt cctttccaga atgtacaccc
+      961 agtcacaata ggagagtgcc caaagtacgt caggagtaca aaattaagga tggttacagg
+     1021 actaaggaac atcccatcca ttcaatccag aggtttgttt ggagccattg ccggtttcat
+     1081 tgaaggggga tggactggaa tgatagatgg atggtatggt tatcatcatc agaatgaaca
+     1141 gggatctggc tatgctgcgg atcaaaaaag cacacaaaat gccattaacg ggattacaaa
+     1201 caaggtgaac tctgtaatcg agaaaatgaa cactcaattc acagctgtgg gtaaagaatt
+     1261 caacaaatta gaaaaaagga tggaaaactt aaataaaaaa gttgatgatg gatttctgga
+     1321 catttggaca tataatgcag aattgttggt tctactggaa aatgaaagga ctttggattt
+     1381 tcatgactca aatgtgaaga acctgtatga gaaagtaaaa agccaattaa agaataatgc
+     1441 caaagaaata ggaaacgggt gttttgaatt ctaccacaag tgtaacaatg aatgcatgga
+     1501 aagtgtaaaa aatggaactt atgactatcc aaaatattca gaggaatcaa agttaaacag
+     1561 ggaaaaaatt gatggagtga aattggaatc aatgggagtc tatcagattc tggcgatcta
+     1621 ctcaactgtc gccagttcac tggtgctttt ggtctccctg ggggcaatca gcttctggat
+     1681 gtgttctaat gggtctttgc agtgcagaat atgcatctga gaccagaatt tcagaaatat
+     1741 aagaaaaaaa
+//
+

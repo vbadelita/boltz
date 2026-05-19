@@ -1,0 +1,6 @@
+version: 1
+sequences:
+  - protein:
+      id: [A, B, C]
+      sequence: ILTPWFLLDHNAWGVWMSPADFNHLTMLCETIELLDLEQEIFNIAIKTVTETATIPPTTQYTNDLTATMLIAEDTNNIFPWSCEGTLLATLGYKPWYTNQLQQFGYYYNSWEVFTAANNPASGGYTSKTEVPMLTGMFLTFENSIPIEMLRTGDSWYSG
+      msa: /home/vlad/code/boltz/test_eve_experiments/runs/h5_start_s40_n6_p2_r3/eve_02_sheplvp1_sheplvp1/boltz_results_eve_02_sheplvp1_sheplvp1/msa/eve_02_sheplvp1_sheplvp1_0.csv
